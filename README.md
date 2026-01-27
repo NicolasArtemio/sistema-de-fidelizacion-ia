@@ -79,7 +79,13 @@ NEXT_PUBLIC_SUPABASE_URL=your_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ADMIN_WHATSAPP=your_phone_number
 JWT_SECRET=your_secure_random_string
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+ADMIN_DEVICE_SECRET=your_admin_device_secret
 ```
+
+Notes:
+- `SUPABASE_SERVICE_ROLE_KEY` is required for server-side admin operations (create users, bypass RLS, monthly snapshots). Keep it private and never expose it to the client.
+- `ADMIN_DEVICE_SECRET` secures the Admin login path. It must match the device’s secret used at login.
 
 ### 3. Database Initialization
 Execute the SQL scripts in `supabase/` following this order:
@@ -89,11 +95,29 @@ Execute the SQL scripts in `supabase/` following this order:
 4. `fix_registration.sql` & `fix_client_login.sql` (Auth triggers)
 5. `setup_admin.sql` (Seed initial admin roles)
 
+Then apply the additional feature scripts in `scripts/` using the Supabase SQL editor:
+
+6. `scripts/schema-update.sql` (Adds `total_points_accumulated` and updates `increment_points`)
+7. `scripts/schema-monthly-winners.sql` (Creates `monthly_winners` with RLS for public read)
+
 ### 4. Launch
 ```bash
 npm install
 npm run dev
 ```
+
+### 5. System Reset & Admin Setup (Optional)
+Use these scripts when bootstrapping or resetting the environment:
+
+```bash
+# Wipes users, profiles, and transactions safely (FK-aware)
+npm run reset-system
+
+# Creates the Admin account using service role, auto-confirms email
+npm run setup-admin
+```
+
+Ensure `ADMIN_WHATSAPP` and `ADMIN_DEVICE_SECRET` are set in `.env.local` before running.
 
 ---
 
@@ -110,6 +134,22 @@ Tulook is fully optimized for mobile installation.
 *   **Typography**: Optimized for readability on mobile devices.
 *   **Status Indicators**: Emerald for success, red for errors, amber for pending/rewards.
 *   **Feedback**: [Sonner](https://sonner.stevenly.me/) toasts + [Confetti](https://www.npmjs.com/package/canvas-confetti) for milestones.
+
+---
+
+## 🏆 Monthly Winners
+
+Tulook captures the previous month’s Top 5 based on **Lifetime Points** (`profiles.total_points_accumulated`).
+
+- **Snapshot Logic**: On app usage at the start of a new month, the server lazily snapshots the previous month’s Top 5 into `monthly_winners`.
+- **Winner Badge**: If a user ranked #1 last month, a premium badge appears on their dashboard during the first 7 days of the current month.
+- **Admin Alert**: Admins can view the previous month’s Top 5 to reward winners.
+
+Implementation highlights:
+- Lifetime points are never reduced on reward redemption; they represent historical contribution.
+- Snapshot table: `scripts/schema-monthly-winners.sql` (RLS enabled for public reads; inserts happen on the server using the Service Role).
+- Client badge component: [WinnerBadge.tsx](file:///c:/Users/Nico/OneDrive/Escritorio/fidelizacio_ia/system-barber-Loyalty-ia/components/loyalty/WinnerBadge.tsx)
+- Server actions (ranking and snapshots): [server-actions.ts](file:///c:/Users/Nico/OneDrive/Escritorio/fidelizacio_ia/system-barber-Loyalty-ia/app/server-actions.ts)
 
 ---
 Built with ❤️ by **Tulook Development Team**
