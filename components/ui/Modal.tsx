@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, Variants } from 'framer-motion'
 import { X, CheckCircle2, XCircle, AlertTriangle, Gift, Scissors, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -32,7 +32,7 @@ const backdropVariants = {
     visible: { opacity: 1 },
 }
 
-const modalVariants = {
+const modalVariants: Variants = {
     hidden: {
         opacity: 0,
         scale: 0.8,
