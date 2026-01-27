@@ -4,6 +4,7 @@ export interface Profile {
     whatsapp: string
     points: number
     monthly_points?: number // Added for Monthly Competition
+    total_points_accumulated?: number // Added for Lifetime Ranking
     role: string
     pin?: string
 }

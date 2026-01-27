@@ -1,5 +1,10 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { Crown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
+import { getTopLoyaltyRanking } from '@/app/server-actions'
 
 interface LeaderboardEntry {
   id: string
@@ -20,7 +25,43 @@ function formatName(fullName: string): string {
   return lastInitial ? `${first} ${lastInitial}` : first
 }
 
-export default function Leaderboard({ top, currentUserId, userRank }: LeaderboardProps) {
+export default function Leaderboard({ top: initialTop, currentUserId, userRank: initialUserRank }: LeaderboardProps) {
+  const [top, setTop] = useState<LeaderboardEntry[]>(initialTop)
+  const [userRank, setUserRank] = useState<number>(initialUserRank)
+  const supabase = createClient()
+
+  useEffect(() => {
+    // Initial sync in case prop data is stale (optional but good practice)
+    // Actually props are fresh from SSR, so skip.
+    
+    const channel = supabase
+      .channel('realtime-leaderboard')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+        },
+        async (payload) => {
+          console.log('🏆 Leaderboard update triggered:', payload)
+          // Re-fetch ranking using the server action
+          try {
+             const { top: newTop, userRank: newRank } = await getTopLoyaltyRanking(currentUserId)
+             setTop(newTop)
+             setUserRank(newRank)
+          } catch (error) {
+             console.error('Failed to update leaderboard:', error)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [currentUserId, supabase])
+
   const isInTop = top.some(t => t.id === currentUserId)
   
   // Dynamic Month in Spanish (e.g., "Enero")

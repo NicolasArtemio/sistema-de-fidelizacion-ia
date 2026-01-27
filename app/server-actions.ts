@@ -559,12 +559,14 @@ export async function getTopLoyaltyRanking(currentUserId: string): Promise<{ top
     serviceRoleKey
   )
 
-  // Fetch Top 5 based on Monthly Points
+  // Fetch Top 5 based on Monthly Points (Tie-breaker: Lifetime Points)
   const { data: topClients } = await supabaseAdmin
     .from('profiles')
-    .select('id, full_name, monthly_points')
+    .select('id, full_name, monthly_points, total_points_accumulated')
     .neq('role', 'admin')
+    .gt('monthly_points', 0) // Only show users with > 0 points
     .order('monthly_points', { ascending: false })
+    .order('total_points_accumulated', { ascending: false }) // Tie-breaker
     .limit(5)
 
   // Map 'monthly_points' to 'points' for the UI
@@ -674,17 +676,21 @@ export async function checkAndSnapshotMonthlyWinners() {
 export async function getPreviousMonthWinners() {
   const supabase = await createClient()
   
-  const now = new Date()
-  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-  const prevMonthStr = prevMonthDate.toISOString().split('T')[0]
-
+  // Instead of strict "previous month", let's get the "latest available snapshot"
+  // This handles the simulation case and is generally more useful (shows last known winners).
+  
   const { data } = await supabase
     .from('monthly_winners')
     .select('*')
-    .eq('month', prevMonthStr)
+    .order('month', { ascending: false }) // Newest month first
     .order('rank', { ascending: true })
+    .limit(5) // Get top 5 of the latest month
 
-  return data || []
+  // We need to filter by the very latest month found
+  if (!data || data.length === 0) return []
+
+  const latestMonth = data[0].month
+  return data.filter(w => w.month === latestMonth)
 }
 
 export async function getMonthlyWinnerStatus(userId: string) {

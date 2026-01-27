@@ -65,11 +65,18 @@ export default function ClientManagement() {
     const [adjustModalOpen, setAdjustModalOpen] = useState(false)
     const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
     const [pointsToAdjust, setPointsToAdjust] = useState(1)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
 
     const fetchProfiles = async () => {
-        setLoading(true)
-        // Select all columns including monthly_points
-        let query = supabase.from('profiles').select('*, monthly_points').order('points', { ascending: false })
+        // Don't set loading to true on background refreshes if we want smooth updates, 
+        // but for now let's keep it simple or maybe only set loading if it's the first load?
+        // logic: if (profiles.length === 0) setLoading(true)
+        
+        // Select all columns including monthly_points and total_points_accumulated
+        let query = supabase
+            .from('profiles')
+            .select('*, monthly_points, total_points_accumulated')
+            .order('points', { ascending: false })
 
         if (search) {
             query = query.or(`full_name.ilike.%${search}%,whatsapp.ilike.%${search}%`)
@@ -77,6 +84,7 @@ export default function ClientManagement() {
 
         const { data, error } = await query
         if (error) {
+            console.error('Error fetching profiles:', error)
             setSuccessModal({
                 isOpen: true,
                 title: 'Error al cargar',
@@ -89,10 +97,34 @@ export default function ClientManagement() {
         setLoading(false)
     }
 
+    // Initial load and Search
     useEffect(() => {
         const timer = setTimeout(fetchProfiles, 500)
         return () => clearTimeout(timer)
-    }, [search])
+    }, [search, refreshTrigger])
+
+    // Realtime Subscription
+    useEffect(() => {
+        const channel = supabase
+            .channel('realtime-profiles-admin')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'profiles',
+                },
+                (payload) => {
+                    console.log('🔔 Realtime update:', payload)
+                    setRefreshTrigger(prev => prev + 1)
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [supabase])
 
     const handleOpenAdjustModal = (profile: Profile, amount: number) => {
         setSelectedProfile(profile)
@@ -262,7 +294,8 @@ export default function ClientManagement() {
                                 <TableHeader>
                                     <TableRow className="border-white/10 hover:bg-transparent">
                                         <TableHead>Usuario</TableHead>
-                                        <TableHead className="text-right">Puntos</TableHead>
+                                        <TableHead className="text-right">Gastables</TableHead>
+                                        <TableHead className="text-right text-muted-foreground">Histórico</TableHead>
                                         <TableHead className="text-center">Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -286,27 +319,22 @@ export default function ClientManagement() {
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <div className="flex flex-col items-end">
-                                                    <div className="flex items-center justify-end gap-1">
-                                                        {profile.points >= 10 && (
-                                                            <Star className="w-4 h-4 text-amber-400 fill-amber-400 animate-pulse" />
-                                                        )}
-                                                        <span className={cn(
-                                                            "text-2xl font-bold",
-                                                            profile.points >= 10 ? "text-amber-400" : "text-primary"
-                                                        )}>
-                                                            {profile.points}
-                                                        </span>
-                                                        <span className="text-xs text-muted-foreground">pts</span>
-                                                    </div>
-                                                    {/* Monthly Points Display */}
-                                                    <div className="flex items-center gap-1 mt-1 opacity-80" title="Puntos del Mes">
-                                                        <Trophy className="w-3 h-3 text-gold-400" />
-                                                        <span className="text-xs font-medium text-gold-300">
-                                                            Mes: {profile.monthly_points ?? 0}
-                                                        </span>
-                                                    </div>
+                                                <div className="flex items-center justify-end gap-1">
+                                                    {profile.points >= 10 && (
+                                                        <Star className="w-4 h-4 text-amber-400 fill-amber-400 animate-pulse" />
+                                                    )}
+                                                    <span className={cn(
+                                                        "text-2xl font-bold",
+                                                        profile.points >= 10 ? "text-amber-400" : "text-primary"
+                                                    )}>
+                                                        {profile.points}
+                                                    </span>
                                                 </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <span className="text-muted-foreground font-mono">
+                                                    {profile.total_points_accumulated ?? 0}
+                                                </span>
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 <div className="flex flex-col items-center gap-3">

@@ -15,17 +15,115 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { generateMarketingInsights, MarketingInsight } from '@/app/ai-actions'
+import { createClient } from '@/lib/supabase/client'
+import { generateMarketingInsights, MarketingInsight, regenerateClientMessage } from '@/app/ai-actions'
 import { toast } from 'sonner'
+
+interface CustomerMarketingCardProps {
+    customer: MarketingInsight['customers'][0];
+    getStatusColor: (status: string) => string;
+    getStatusIcon: (status: string) => React.ReactNode;
+}
+
+function CustomerMarketingCard({ customer, getStatusColor, getStatusIcon }: CustomerMarketingCardProps) {
+    const [message, setMessage] = useState(customer.message);
+    const [points, setPoints] = useState(customer.points);
+    const [status, setStatus] = useState(customer.status);
+    const [isRegenerating, setIsRegenerating] = useState(false);
+
+    // Update local state if prop changes (e.g. global refresh or realtime update)
+    useEffect(() => {
+        setMessage(customer.message);
+        setPoints(customer.points);
+        setStatus(customer.status);
+    }, [customer]);
+
+    const handleRegenerate = async () => {
+        setIsRegenerating(true);
+        try {
+            const result = await regenerateClientMessage(
+                customer.id, 
+                message
+            );
+            setMessage(result.message);
+            setPoints(result.points);
+            setStatus(result.status as any); // Cast if needed, or update type definition
+            toast.success('Mensaje regenerado con éxito');
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al regenerar el mensaje');
+        } finally {
+            setIsRegenerating(false);
+        }
+    };
+
+    const handleSendWhatsapp = () => {
+        const url = `https://wa.me/${customer.phone}?text=${encodeURIComponent(message)}`;
+        window.open(url, '_blank');
+    };
+
+    return (
+        <Card className="bg-zinc-900/50 border-white/5 hover:border-white/10 transition-colors h-full flex flex-col group">
+            <CardHeader className="pb-3">
+                <div className="flex justify-between items-start mb-2">
+                    <Badge variant="outline" className={`${getStatusColor(status)} flex items-center gap-1`}>
+                        {getStatusIcon(status)}
+                        {status}
+                    </Badge>
+                    <span className="text-xs text-zinc-500 font-mono">
+                        {customer.lastVisitDays}d sin visita
+                    </span>
+                </div>
+                <CardTitle className="text-lg text-white truncate">{customer.name}</CardTitle>
+                <div className="text-sm text-zinc-400 flex items-center gap-2">
+                    <span className="text-amber-500 font-bold">{points} pts</span>
+                    <span>•</span>
+                    <span>{customer.phone}</span>
+                </div>
+            </CardHeader>
+            <CardContent className="flex-grow flex flex-col gap-3">
+                <div className="relative flex-grow">
+                    <textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        className="w-full h-32 bg-zinc-950/50 text-zinc-300 text-sm p-3 rounded-lg border border-white/10 focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 resize-none outline-none transition-all font-sans leading-relaxed"
+                        placeholder="Escribe un mensaje..."
+                    />
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={handleRegenerate}
+                        disabled={isRegenerating}
+                        className="absolute bottom-2 right-2 h-8 w-8 bg-zinc-800/80 hover:bg-indigo-500/20 hover:text-indigo-400 rounded-md backdrop-blur-sm transition-all"
+                        title="Regenerar mensaje con IA"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
+                    </Button>
+                </div>
+                
+                <Button 
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-900/20 transition-all active:scale-[0.98]"
+                    onClick={handleSendWhatsapp}
+                >
+                    <Send className="w-4 h-4 mr-2" />
+                    Enviar WhatsApp
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function AiMarketingAgent() {
     const [loading, setLoading] = useState(true)
     const [data, setData] = useState<MarketingInsight | null>(null)
     const [isRegenerating, setIsRegenerating] = useState(false)
+    const supabase = createClient()
 
     const fetchInsights = async () => {
         try {
-            setLoading(true)
+            // Don't set loading to true for background refreshes unless data is null
+            if (!data) setLoading(true)
+            
             const result = await generateMarketingInsights()
             setData(result)
         } catch (error) {
@@ -39,16 +137,52 @@ export default function AiMarketingAgent() {
 
     useEffect(() => {
         fetchInsights()
+
+        // Realtime subscription for immediate point updates
+        const channel = supabase
+            .channel('ai-marketing-updates')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'profiles',
+                },
+                (payload) => {
+                    const newProfile = payload.new as any;
+                    console.log('🔔 AI Agent Realtime Update:', newProfile);
+                    
+                    setData(currentData => {
+                        if (!currentData) return null;
+                        
+                        return {
+                            ...currentData,
+                            customers: currentData.customers.map(c => {
+                                if (c.id === newProfile.id) {
+                                    // Update points immediately
+                                    return {
+                                        ...c,
+                                        points: newProfile.points,
+                                        // Update status logic simplified for client-side
+                                        status: newProfile.points >= 15 ? 'Loyal' : c.status
+                                    };
+                                }
+                                return c;
+                            })
+                        };
+                    });
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [])
 
     const handleRefresh = () => {
         setIsRegenerating(true)
         fetchInsights()
-    }
-
-    const handleSendWhatsapp = (phone: string, message: string) => {
-        const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
-        window.open(url, '_blank')
     }
 
     const getStatusColor = (status: string) => {
@@ -109,10 +243,19 @@ export default function AiMarketingAgent() {
                                 size="sm" 
                                 onClick={handleRefresh}
                                 disabled={isRegenerating}
-                                className="bg-zinc-900/50 border-white/10 hover:bg-white/5"
+                                className="bg-zinc-900/50 border-white/10 hover:bg-white/5 min-w-[120px]"
                             >
-                                <RefreshCw className={`w-4 h-4 mr-2 ${isRegenerating ? 'animate-spin' : ''}`} />
-                                Actualizar
+                                {isRegenerating ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin text-indigo-400" />
+                                        Analizando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 mr-2" />
+                                        Actualizar
+                                    </>
+                                )}
                             </Button>
                         </div>
                     </CardHeader>
@@ -133,37 +276,11 @@ export default function AiMarketingAgent() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
                     >
-                        <Card className="bg-zinc-900/50 border-white/5 hover:border-white/10 transition-colors h-full flex flex-col">
-                            <CardHeader className="pb-3">
-                                <div className="flex justify-between items-start mb-2">
-                                    <Badge variant="outline" className={`${getStatusColor(customer.status)} flex items-center gap-1`}>
-                                        {getStatusIcon(customer.status)}
-                                        {customer.status}
-                                    </Badge>
-                                    <span className="text-xs text-zinc-500 font-mono">
-                                        {customer.lastVisitDays}d sin visita
-                                    </span>
-                                </div>
-                                <CardTitle className="text-lg text-white truncate">{customer.name}</CardTitle>
-                                <div className="text-sm text-zinc-400 flex items-center gap-2">
-                                    <span className="text-amber-500 font-bold">{customer.points} pts</span>
-                                    <span>•</span>
-                                    <span>{customer.phone}</span>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="flex-grow flex flex-col justify-between gap-4">
-                                <div className="p-3 bg-zinc-950/50 rounded-lg border border-white/5">
-                                    <p className="text-sm text-zinc-300 italic">&quot;{customer.message}&quot;</p>
-                                </div>
-                                <Button 
-                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-900/20"
-                                    onClick={() => handleSendWhatsapp(customer.phone, customer.message)}
-                                >
-                                    <Send className="w-4 h-4 mr-2" />
-                                    Enviar WhatsApp
-                                </Button>
-                            </CardContent>
-                        </Card>
+                        <CustomerMarketingCard 
+                            customer={customer}
+                            getStatusColor={getStatusColor}
+                            getStatusIcon={getStatusIcon}
+                        />
                     </motion.div>
                 ))}
             </div>

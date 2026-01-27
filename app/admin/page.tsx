@@ -1,12 +1,12 @@
 import { getSessionUserProfile } from '@/app/auth-actions'
-import { logout, getAtRiskClientCount, getAdminStats, checkAndSnapshotMonthlyWinners, getPreviousMonthWinners } from '@/app/server-actions'
+import { logout, getAtRiskClientCount, getAdminStats } from '@/app/server-actions'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import AdminScanner from '@/components/admin/AdminScanner'
 import ClientManagement from '@/components/admin/ClientManagement'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { LogOut, Bot, Sparkles, ArrowRight, AlertTriangle, Users, CalendarCheck, Gift, Trophy } from 'lucide-react'
+import { LogOut, Bot, Sparkles, ArrowRight, AlertTriangle, Users, CalendarCheck, Gift } from 'lucide-react'
 
 export default async function AdminDashboard() {
     const profile = await getSessionUserProfile()
@@ -19,15 +19,8 @@ export default async function AdminDashboard() {
         redirect('/dashboard') // Restricted view
     }
 
-    // Trigger lazy snapshot logic
-    await checkAndSnapshotMonthlyWinners()
-
     const atRiskCount = await getAtRiskClientCount()
     const stats = await getAdminStats()
-    const monthlyWinners = await getPreviousMonthWinners()
-    
-    // Only show alert if we have winners for the previous month
-    const showWinnersAlert = monthlyWinners.length > 0
 
     return (
         <div className="min-h-screen bg-background pb-20">
@@ -66,32 +59,6 @@ export default async function AdminDashboard() {
 
             <main className="p-4 space-y-6 max-w-4xl mx-auto mt-6">
                 
-                {/* Monthly Winners Alert (Dismissible logic handled by admin mentally for now, or just show top 5 always for recent month) */}
-                {showWinnersAlert && (
-                    <div className="bg-gradient-to-r from-gold-500/10 to-amber-900/10 border border-gold-500/30 rounded-lg p-4 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-3 opacity-10">
-                            <Trophy className="w-24 h-24 text-gold-500" />
-                        </div>
-                        <div className="relative z-10">
-                            <h3 className="text-lg font-extrabold text-gold-500 flex items-center gap-2 mb-2">
-                                <Trophy className="w-5 h-5" />
-                                Top 5 del Mes Pasado
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
-                                {monthlyWinners.map((winner) => (
-                                    <div key={winner.id} className="bg-neutral-900/60 rounded p-2 border border-gold-500/10 flex flex-col items-center text-center">
-                                        <div className="w-6 h-6 rounded-full bg-gold-500/20 text-gold-500 flex items-center justify-center text-xs font-bold mb-1">
-                                            #{winner.rank}
-                                        </div>
-                                        <span className="text-xs font-semibold text-zinc-200 truncate w-full">{winner.full_name}</span>
-                                        <span className="text-[10px] text-zinc-400">{winner.points} pts</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
                 {atRiskCount > 0 && (
                     <Link href="/admin/ai-assistant">
                         <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center justify-between cursor-pointer hover:bg-red-500/20 transition-all group animate-pulse">

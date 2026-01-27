@@ -2,12 +2,9 @@ import { getSessionUserProfile } from '@/app/auth-actions'
 import { logout } from '@/app/server-actions'
 import { redirect } from 'next/navigation'
 import StampCard from '@/components/loyalty/StampCard'
-import Leaderboard from '@/components/loyalty/Leaderboard'
 import ClientQR from '@/components/loyalty/ClientQR'
-import WinnerBadge from '@/components/loyalty/WinnerBadge'
 import { Button } from '@/components/ui/button'
 import { LogOut } from 'lucide-react'
-import { getTopLoyaltyRanking, getMonthlyWinnerStatus } from '@/app/server-actions'
 
 export default async function Dashboard() {
     const profile = await getSessionUserProfile()
@@ -19,9 +16,6 @@ export default async function Dashboard() {
     if (profile.role === 'admin') {
         redirect('/admin')
     }
-
-    const { top, userRank } = await getTopLoyaltyRanking(profile.id)
-    const winnerStatus = await getMonthlyWinnerStatus(profile.id)
 
     return (
         <div className="min-h-screen bg-neutral-950 pb-20">
@@ -49,11 +43,6 @@ export default async function Dashboard() {
 
             <main className="p-4 space-y-8 max-w-md mx-auto mt-6">
                 
-                {/* Monthly Winner Badge (First 7 days of month only) */}
-                {winnerStatus && (
-                    <WinnerBadge winnerName={profile.full_name || 'Campeón'} />
-                )}
-
                 {/* Stamp Card */}
                 <section>
                     <StampCard points={profile.points} />
@@ -81,10 +70,6 @@ export default async function Dashboard() {
                             Corte
                         </div>
                     </div>
-                </section>
-
-                <section className="pt-2">
-                    <Leaderboard top={top} currentUserId={profile.id} userRank={userRank} />
                 </section>
             </main>
         </div>
