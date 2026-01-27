@@ -325,6 +325,13 @@ export async function adjustPoints(userId: string, amount: number) {
 
     // 2. Use Service Role to bypass RLS
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+
+    // LOG: Connection Test
+    console.log('[SERVER ACTION] Connecting to Supabase:', { 
+        url: supabaseUrl ? 'Defined' : 'Missing',
+        hasServiceKey: !!serviceRoleKey 
+    })
 
     if (!serviceRoleKey) {
         console.error('FATAL: SUPABASE_SERVICE_ROLE_KEY is missing in environment variables')
@@ -332,90 +339,94 @@ export async function adjustPoints(userId: string, amount: number) {
     }
 
     const supabaseAdmin = createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        supabaseUrl!,
         serviceRoleKey
     )
 
-    // DEBUG: Verify User Existence & Get Current Points
-    const { data: targetUser, error: targetError } = await supabaseAdmin
-        .from('profiles')
-        .select('id, full_name, points, total_points_accumulated, monthly_points')
-        .eq('id', userId)
-        .single()
-    
-    if (targetError || !targetUser) {
-        console.error('❌ [SERVER ACTION] User not found:', userId)
-        return { error: `Usuario no encontrado en la BD. ID: ${userId}` }
-    }
-
-    // 3. Numeric Conversion & Validation
-    const pointsValue = Number(amount)
-    if (isNaN(pointsValue)) {
-        return { error: 'Invalid points amount (NaN)' }
-    }
-
-    // 4. Update Strategy: Direct Update ONLY (RPC is unreliable)
-    
-    // Default Points: Ensure valid math
-    const currentPointsVal = Number(targetUser.points)
-    const currentPointsSafe = isNaN(currentPointsVal) ? 0 : currentPointsVal
-    const newTotal = currentPointsSafe + pointsValue
-
-    // Lifetime Points Logic: Only increment on positive addition (Earn)
-    // If spending (negative), we do NOT touch accumulated points OR monthly points.
-    const currentAccumulatedVal = Number(targetUser.total_points_accumulated)
-    const currentAccumulatedSafe = isNaN(currentAccumulatedVal) ? 0 : currentAccumulatedVal
-    
-    // Monthly Points Logic
-    const currentMonthlyVal = Number(targetUser.monthly_points)
-    const currentMonthlySafe = isNaN(currentMonthlyVal) ? 0 : currentMonthlyVal
-
-    // If pointsValue > 0, we add to accumulated and monthly.
-    const newAccumulated = pointsValue > 0 
-        ? currentAccumulatedSafe + pointsValue 
-        : currentAccumulatedSafe
+    try {
+        // DEBUG: Verify User Existence & Get Current Points
+        const { data: targetUser, error: targetError } = await supabaseAdmin
+            .from('profiles')
+            .select('id, full_name, points, total_points_accumulated, monthly_points')
+            .eq('id', userId)
+            .single()
         
-    const newMonthly = pointsValue > 0
-        ? currentMonthlySafe + pointsValue
-        : currentMonthlySafe
+        if (targetError || !targetUser) {
+            console.error('❌ [SERVER ACTION] User not found:', userId, targetError)
+            return { error: `Usuario no encontrado en la BD. ID: ${userId}` }
+        }
 
-    // UUID Casting: Trim one last time
-    const safeId = userId.trim()
+        // 3. Numeric Conversion & Validation
+        const pointsValue = Number(amount)
+        if (isNaN(pointsValue)) {
+            return { error: 'Invalid points amount (NaN)' }
+        }
 
-    const { data, error } = await supabaseAdmin
-        .from('profiles')
-        .update({ 
-            points: newTotal,
-            total_points_accumulated: newAccumulated,
-            monthly_points: newMonthly
-        })
-        .eq('id', safeId)
-        .select() // Return updated rows
+        // 4. Update Strategy: Direct Update ONLY (RPC is unreliable)
+        
+        // Default Points: Ensure valid math
+        const currentPointsVal = Number(targetUser.points)
+        const currentPointsSafe = isNaN(currentPointsVal) ? 0 : currentPointsVal
+        const newTotal = currentPointsSafe + pointsValue
 
-    if (error) {
-        console.error('❌ [SERVER ACTION] Direct Update Failed:', error)
-        return { error: `Update Failed: ${error.message} (Code: ${error.code})` }
+        // Lifetime Points Logic: Only increment on positive addition (Earn)
+        // If spending (negative), we do NOT touch accumulated points OR monthly points.
+        const currentAccumulatedVal = Number(targetUser.total_points_accumulated)
+        const currentAccumulatedSafe = isNaN(currentAccumulatedVal) ? 0 : currentAccumulatedVal
+        
+        // Monthly Points Logic
+        const currentMonthlyVal = Number(targetUser.monthly_points)
+        const currentMonthlySafe = isNaN(currentMonthlyVal) ? 0 : currentMonthlyVal
+
+        // If pointsValue > 0, we add to accumulated and monthly.
+        const newAccumulated = pointsValue > 0 
+            ? currentAccumulatedSafe + pointsValue 
+            : currentAccumulatedSafe
+            
+        const newMonthly = pointsValue > 0
+            ? currentMonthlySafe + pointsValue
+            : currentMonthlySafe
+
+        // UUID Casting: Trim one last time
+        const safeId = userId.trim()
+
+        const { data, error } = await supabaseAdmin
+            .from('profiles')
+            .update({ 
+                points: newTotal,
+                total_points_accumulated: newAccumulated,
+                monthly_points: newMonthly
+            })
+            .eq('id', safeId)
+            .select() // Return updated rows
+
+        if (error) {
+            console.error('Supabase Error:', error)
+            return { error: `Update Failed: ${error.message} (Code: ${error.code})` }
+        }
+
+        // Row Count Check
+        if (!data || data.length === 0) {
+            console.error('❌ [SERVER ACTION] Update ran but affected 0 rows.')
+            return { error: 'Update succeeded but NO rows were changed. ID mismatch likely.' }
+        }
+
+        // Verify final state
+        const { data: finalUser } = await supabaseAdmin
+            .from('profiles')
+            .select('points')
+            .eq('id', safeId)
+            .single()
+
+        console.log('✅ [SERVER ACTION] Success. New Balance:', finalUser?.points)
+
+        revalidatePath('/admin')
+        return { success: true, message: 'Puntos actualizados correctamente' }
+
+    } catch (err) {
+        console.error('CRITICAL ERROR in adjustPoints:', err)
+        return { error: 'Critical System Error during point adjustment' }
     }
-
-    // Row Count Check
-    if (!data || data.length === 0) {
-        console.error('❌ [SERVER ACTION] Update ran but affected 0 rows.')
-        return { error: 'Update succeeded but NO rows were changed. ID mismatch likely.' }
-    }
-
-    // Verify final state
-    const { data: finalUser } = await supabaseAdmin
-        .from('profiles')
-        .select('points')
-        .eq('id', userId)
-        .single()
-
-    const finalPoints = finalUser?.points ?? 'unknown'
-
-    revalidatePath('/admin')
-    revalidatePath('/dashboard')
-
-    return { success: true, message: `Points updated. New Balance: ${finalPoints}` }
 }
 
 export async function resetUserPin(userId: string, newPin: string) {
