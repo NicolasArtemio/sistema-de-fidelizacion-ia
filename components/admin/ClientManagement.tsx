@@ -68,7 +68,8 @@ export default function ClientManagement() {
 
     const fetchProfiles = async () => {
         setLoading(true)
-        let query = supabase.from('profiles').select('*').order('points', { ascending: false })
+        // Select all columns including monthly_points
+        let query = supabase.from('profiles').select('*, monthly_points').order('points', { ascending: false })
 
         if (search) {
             query = query.or(`full_name.ilike.%${search}%,whatsapp.ilike.%${search}%`)
@@ -285,17 +286,26 @@ export default function ClientManagement() {
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    {profile.points >= 10 && (
-                                                        <Star className="w-4 h-4 text-amber-400 fill-amber-400 animate-pulse" />
-                                                    )}
-                                                    <span className={cn(
-                                                        "text-2xl font-bold",
-                                                        profile.points >= 10 ? "text-amber-400" : "text-primary"
-                                                    )}>
-                                                        {profile.points}
-                                                    </span>
-                                                    <span className="text-xs text-muted-foreground">pts</span>
+                                                <div className="flex flex-col items-end">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        {profile.points >= 10 && (
+                                                            <Star className="w-4 h-4 text-amber-400 fill-amber-400 animate-pulse" />
+                                                        )}
+                                                        <span className={cn(
+                                                            "text-2xl font-bold",
+                                                            profile.points >= 10 ? "text-amber-400" : "text-primary"
+                                                        )}>
+                                                            {profile.points}
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground">pts</span>
+                                                    </div>
+                                                    {/* Monthly Points Display */}
+                                                    <div className="flex items-center gap-1 mt-1 opacity-80" title="Puntos del Mes">
+                                                        <Trophy className="w-3 h-3 text-gold-400" />
+                                                        <span className="text-xs font-medium text-gold-300">
+                                                            Mes: {profile.monthly_points ?? 0}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center">

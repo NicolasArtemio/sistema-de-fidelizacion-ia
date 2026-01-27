@@ -3,6 +3,7 @@ export interface Profile {
     full_name: string
     whatsapp: string
     points: number
+    monthly_points?: number // Added for Monthly Competition
     role: string
     pin?: string
 }

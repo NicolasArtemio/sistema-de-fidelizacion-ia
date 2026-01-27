@@ -339,7 +339,7 @@ export async function adjustPoints(userId: string, amount: number) {
     // DEBUG: Verify User Existence & Get Current Points
     const { data: targetUser, error: targetError } = await supabaseAdmin
         .from('profiles')
-        .select('id, full_name, points, total_points_accumulated')
+        .select('id, full_name, points, total_points_accumulated, monthly_points')
         .eq('id', userId)
         .single()
     
@@ -362,23 +362,22 @@ export async function adjustPoints(userId: string, amount: number) {
     const newTotal = currentPointsSafe + pointsValue
 
     // Lifetime Points Logic: Only increment on positive addition (Earn)
-    // If spending (negative), we do NOT touch accumulated points.
+    // If spending (negative), we do NOT touch accumulated points OR monthly points.
     const currentAccumulatedVal = Number(targetUser.total_points_accumulated)
-    const currentAccumulatedSafe = isNaN(currentAccumulatedVal) ? 0 : currentAccumulatedVal // Default to 0 if null
+    const currentAccumulatedSafe = isNaN(currentAccumulatedVal) ? 0 : currentAccumulatedVal
     
-    // If pointsValue > 0, we add to accumulated. If < 0, we leave it alone.
-    // However, if we are correcting a mistake (removing points we just added), technically accumulated should go down.
-    // But the prompt says: "When a reward is redeemed, subtract from points but DO NOT subtract from total_points_accumulated."
-    // Since we can't distinguish "Redemption" from "Correction" easily here without context,
-    // and the primary use case for negative points is redemption, we will strictly follow:
-    // Only ADD to accumulated. Never subtract? 
-    // Let's assume adjustments are mostly 'Earn' or 'Redeem'.
-    // If I want to fix a mistake, I might need manual SQL or a specific flag. 
-    // For now, adhering to "DO NOT subtract from total_points_accumulated" for negative values is safest for the ranking integrity.
-    
+    // Monthly Points Logic
+    const currentMonthlyVal = Number(targetUser.monthly_points)
+    const currentMonthlySafe = isNaN(currentMonthlyVal) ? 0 : currentMonthlyVal
+
+    // If pointsValue > 0, we add to accumulated and monthly.
     const newAccumulated = pointsValue > 0 
         ? currentAccumulatedSafe + pointsValue 
         : currentAccumulatedSafe
+        
+    const newMonthly = pointsValue > 0
+        ? currentMonthlySafe + pointsValue
+        : currentMonthlySafe
 
     // UUID Casting: Trim one last time
     const safeId = userId.trim()
@@ -387,7 +386,8 @@ export async function adjustPoints(userId: string, amount: number) {
         .from('profiles')
         .update({ 
             points: newTotal,
-            total_points_accumulated: newAccumulated
+            total_points_accumulated: newAccumulated,
+            monthly_points: newMonthly
         })
         .eq('id', safeId)
         .select() // Return updated rows
@@ -559,35 +559,35 @@ export async function getTopLoyaltyRanking(currentUserId: string): Promise<{ top
     serviceRoleKey
   )
 
-  // Fetch Top 5 based on Lifetime Points
+  // Fetch Top 5 based on Monthly Points
   const { data: topClients } = await supabaseAdmin
     .from('profiles')
-    .select('id, full_name, total_points_accumulated')
+    .select('id, full_name, monthly_points')
     .neq('role', 'admin')
-    .order('total_points_accumulated', { ascending: false })
+    .order('monthly_points', { ascending: false })
     .limit(5)
 
-  // Map 'total_points_accumulated' to 'points' for the UI to display the Score
+  // Map 'monthly_points' to 'points' for the UI
   const formattedTop = topClients?.map(client => ({
     id: client.id,
     full_name: client.full_name,
-    points: client.total_points_accumulated ?? 0 // Display Lifetime Points
+    points: client.monthly_points ?? 0 // Display Monthly Points
   })) || []
 
   const { data: userProfile } = await supabaseAdmin
     .from('profiles')
-    .select('id, total_points_accumulated')
+    .select('id, monthly_points')
     .eq('id', currentUserId)
     .single()
 
   let userRank = 0
   if (userProfile) {
-    const userScore = userProfile.total_points_accumulated ?? 0
+    const userScore = userProfile.monthly_points ?? 0
     const { count } = await supabaseAdmin
       .from('profiles')
       .select('*', { count: 'exact', head: true })
       .neq('role', 'admin')
-      .gt('total_points_accumulated', userScore)
+      .gt('monthly_points', userScore)
     
     userRank = (count || 0) + 1
   }
@@ -606,8 +606,6 @@ export async function checkAndSnapshotMonthlyWinners() {
 
   const now = new Date()
   // "Previous Month" is what we want to snapshot.
-  // Example: If today is Feb 1st, we want to snapshot Jan's winners.
-  // We use the first day of the *previous* month as the identifier.
   const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
   const prevMonthStr = prevMonthDate.toISOString().split('T')[0] // YYYY-MM-01
 
@@ -622,12 +620,19 @@ export async function checkAndSnapshotMonthlyWinners() {
     return // Already snapshotted
   }
 
-  // 2. If not, fetch Top 5 Lifetime Users
+  console.log(`📸 [SNAPSHOT] Initiating monthly snapshot for ${prevMonthStr}...`)
+
+  // 2. Fetch Top 5 based on LAST MONTH'S activity
+  // Since we reset monthly_points on the 1st, we need to be careful.
+  // Assumption: This code runs on the FIRST user interaction of the new month.
+  // At this moment, 'monthly_points' SHOULD still contain the accumulated points from last month
+  // because we haven't reset them yet.
+  
   const { data: topClients } = await supabaseAdmin
     .from('profiles')
-    .select('id, full_name, total_points_accumulated')
+    .select('id, full_name, monthly_points, total_points_accumulated')
     .neq('role', 'admin')
-    .order('total_points_accumulated', { ascending: false })
+    .order('monthly_points', { ascending: false })
     .limit(5)
 
   if (!topClients || topClients.length === 0) return
@@ -637,18 +642,32 @@ export async function checkAndSnapshotMonthlyWinners() {
     month: prevMonthStr,
     user_id: client.id,
     full_name: client.full_name,
-    points: client.total_points_accumulated ?? 0,
+    points: client.monthly_points ?? 0, // Store the monthly score
     rank: index + 1
   }))
 
-  const { error } = await supabaseAdmin
+  const { error: insertError } = await supabaseAdmin
     .from('monthly_winners')
     .insert(winnersToInsert)
 
-  if (error) {
-    console.error('❌ Failed to snapshot monthly winners:', error)
+  if (insertError) {
+    console.error('❌ Failed to snapshot monthly winners:', insertError)
+    return
+  }
+
+  console.log(`✅ Monthly Snapshot created for ${prevMonthStr}`)
+
+  // 4. RESET monthly_points for ALL users
+  // This ensures the new month starts fresh.
+  const { error: resetError } = await supabaseAdmin
+    .from('profiles')
+    .update({ monthly_points: 0 })
+    .neq('role', 'admin') // Reset everyone except admin (though admin shouldn't have points anyway)
+  
+  if (resetError) {
+     console.error('❌ Failed to reset monthly_points:', resetError)
   } else {
-    console.log(`✅ Monthly Snapshot created for ${prevMonthStr}`)
+     console.log('🔄 Monthly points reset to 0 for all users.')
   }
 }
 
