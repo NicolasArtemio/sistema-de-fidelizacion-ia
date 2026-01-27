@@ -1,0 +1,20 @@
+{
+    "name": "tulook",
+    "short_name": "tulook",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#121212",
+    "theme_color": "#D4AF37",
+    "icons": [
+        {
+            "src": "/blogo.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/blogo.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
