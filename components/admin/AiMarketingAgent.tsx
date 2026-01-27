@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
     Sparkles, 
-    MessageCircle, 
     TrendingUp, 
     AlertTriangle, 
     UserPlus, 
@@ -16,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
-import { generateMarketingInsights, MarketingInsight, regenerateClientMessage } from '@/app/ai-actions'
+import { generateMarketingInsights, MarketingInsight, regenerateClientMessage, getLatestCustomerData } from '@/app/ai-actions'
 import { toast } from 'sonner'
 
 interface CustomerMarketingCardProps {
@@ -38,6 +37,24 @@ function CustomerMarketingCard({ customer, getStatusColor, getStatusIcon }: Cust
         setStatus(customer.status);
     }, [customer]);
 
+    // Fetch latest data on mount to ensure freshness (fixes sync bugs)
+    useEffect(() => {
+        const fetchLatest = async () => {
+            try {
+                const latest = await getLatestCustomerData(customer.id);
+                if (latest && latest.points !== points) {
+                    console.log(`🔄 Syncing data for ${customer.name}: ${points} -> ${latest.points}`);
+                    setPoints(latest.points);
+                    // Only update status if points changed significantly
+                    if (latest.status !== status) setStatus(latest.status);
+                }
+            } catch (error) {
+                console.error('Error syncing customer data:', error);
+            }
+        };
+        fetchLatest();
+    }, []); // Run once on mount
+
     const handleRegenerate = async () => {
         setIsRegenerating(true);
         try {
@@ -47,7 +64,7 @@ function CustomerMarketingCard({ customer, getStatusColor, getStatusIcon }: Cust
             );
             setMessage(result.message);
             setPoints(result.points);
-            setStatus(result.status as any); // Cast if needed, or update type definition
+            setStatus(result.status);
             toast.success('Mensaje regenerado con éxito');
         } catch (error) {
             console.error(error);

@@ -4,10 +4,14 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 
-interface UserVisitData {
+interface AnalyzedUser {
+  id: string;
   name: string;
-  lastVisitDate: string; // ISO date string
-  points?: number;
+  phone: string;
+  points: number;
+  daysSinceLastVisit: number;
+  visitCount: number;
+  isNew: boolean;
 }
 
 // New Types for Marketing Agent
@@ -43,7 +47,7 @@ export async function generateMarketingInsights(): Promise<MarketingInsight> {
 
   // 2. Process Data for AI
   const now = new Date();
-  const userAnalysis = profiles.map(user => {
+  const userAnalysis: AnalyzedUser[] = profiles.map(user => {
     const userTx = transactions?.filter(t => t.user_id === user.id) || [];
     // Sort desc
     userTx.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -139,7 +143,7 @@ export async function generateMarketingInsights(): Promise<MarketingInsight> {
   }
 }
 
-function generateFallbackInsights(users: any[]): MarketingInsight {
+function generateFallbackInsights(users: AnalyzedUser[]): MarketingInsight {
     const loyal = users.filter(u => u.visitCount > 2 && u.daysSinceLastVisit < 30)
     const atRisk = users.filter(u => u.daysSinceLastVisit >= 21)
     
@@ -204,45 +208,24 @@ function generateFallbackInsights(users: any[]): MarketingInsight {
     }
 }
 
-export async function generateDiscountSuggestion(users: UserVisitData[]) {
-  // Ensure the API key is available
-  const apiKey = process.env.GROQ_API_KEY;
+export async function getLatestCustomerData(customerId: string) {
+  const supabase = await createClient();
+  
+  const { data: user } = await supabase
+    .from('profiles')
+    .select('id, points, full_name')
+    .eq('id', customerId)
+    .single();
 
-  if (!apiKey) {
-    throw new Error('Groq API Key not configured');
-  }
+  if (!user) return null;
 
-  const groq = createOpenAI({
-    baseURL: 'https://api.groq.com/openai/v1',
-    apiKey: apiKey,
-  });
-
-  const prompt = `
-    You are a marketing expert for a barber shop loyalty system.
-    Analyze the following list of users and their last visit dates.
-    
-    Goal: Identify users who are at risk of churning (haven't visited in 30+ days) or are loyal customers due for a reward.
-    
-    Instructions:
-    1. specific discount suggestions for users who haven't visited in over 30 days.
-    2. Keep the tone professional but encouraging.
-    3. Format the output as a clear list of actionable suggestions.
-    
-    Users Data:
-    ${JSON.stringify(users, null, 2)}
-  `;
-
-  try {
-    const { text } = await generateText({
-      model: groq('llama-3.3-70b-versatile'),
-      prompt: prompt,
-    });
-
-    return text;
-  } catch (error) {
-    console.error('Error generating discount suggestion:', error);
-    throw new Error('Failed to generate suggestions from AI');
-  }
+  let status: 'Loyal' | 'At Risk' | 'New' = 'New';
+  if (user.points >= 15) status = 'Loyal';
+  
+  return {
+    points: user.points,
+    status
+  };
 }
 
 export async function regenerateClientMessage(
@@ -264,11 +247,16 @@ export async function regenerateClientMessage(
   const name = user.full_name || 'Cliente';
   const points = user.points || 0;
   
-  // Determine Status based on simple logic (or could be more complex with visits)
-  // For regeneration, we care mostly about points logic
+  // Determine Status and Milestones
   let status: 'Loyal' | 'At Risk' | 'New' = 'New';
-  if (points >= 15) status = 'Loyal'; // VIP context
-  // Note: True status requires visit history, but for message generation, points are key.
+  if (points >= 15) status = 'Loyal';
+
+  // Calculate milestones for prompt context
+  let nextMilestone = 15;
+  if (points < 5) nextMilestone = 5;
+  else if (points < 10) nextMilestone = 10;
+  
+  const pointsNeeded = nextMilestone - points;
   
   const groq = createOpenAI({
     baseURL: 'https://api.groq.com/openai/v1',
@@ -289,15 +277,17 @@ export async function regenerateClientMessage(
     
     Context:
     - Points: ${points}
+    - Next Milestone: ${nextMilestone} points
+    - Points Needed: ${pointsNeeded}
     - Current Message: "${currentMessage}" (Make the new one DIFFERENT but keeping the same intent)
 
     **Rules:**
     1. **Personalization:** Start with "${name}" but vary the greeting (e.g., "Che ${name}", "¡${name}!", "Hola ${name}").
     2. **Tone:** Informal, cool, Rioplatense Spanish.
     3. **Length:** Max 2 sentences.
-    4. **Content Logic:**
+    4. **Content Logic (STRICT):**
        - If Points == 0: Welcome / First cut invitation.
-       - If Points 1-14: Motivational (mention points needed for next multiple of 5).
+       - If Points 1-14: MUST say exactly: "Te faltan solo ${pointsNeeded} puntos para tu próximo premio." (You can vary the surrounding text but keep the math).
        - If Points 15+: VIP / Reward ready.
     
     Return ONLY the raw string of the new message. No quotes, no JSON.
