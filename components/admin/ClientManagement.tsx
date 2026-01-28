@@ -321,439 +321,180 @@ export default function ClientManagement() {
                         </div>
                     ) : (
                         <>
-                        <div className="hidden md:block space-y-4">
-                            {/* List Header */}
-                            <div className="grid grid-cols-12 gap-4 px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider bg-zinc-900/20 rounded-lg border border-white/5">
-                                <div className="col-span-4">Usuario</div>
-                                <div className="col-span-3 text-center">Gastables</div>
-                                <div className="col-span-2 text-center">Histórico</div>
-                                <div className="col-span-3 text-center">Acciones</div>
-                            </div>
-
-                            {/* Client Rows */}
-                            <div className="space-y-3">
+                            {/* MOBILE VIEW (Strict Vertical Stack) */}
+                            <div className="md:hidden flex flex-col gap-4 pb-24">
                                 {profiles.map((profile) => (
-                                    <div
-                                        key={profile.id}
-                                        className="grid grid-cols-12 gap-4 items-center p-4 bg-zinc-900/30 hover:bg-zinc-900/60 border border-white/5 rounded-xl transition-all group"
-                                    >
-                                        {/* Col 1: Usuario (4 cols) */}
-                                        <div className="col-span-4 flex flex-col gap-1">
-                                            <div className="font-medium text-base text-zinc-100 group-hover:text-white transition-colors">
+                                    <div key={profile.id} className="flex flex-col w-full bg-zinc-900/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg p-4">
+                                        {/* Line 1: Name and Points */}
+                                        <div className="flex justify-between items-center w-full mb-1">
+                                            <div className="font-bold text-lg text-white truncate mr-2 flex-1">
                                                 {profile.full_name || 'Sin Nombre'}
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-zinc-500 font-mono">
-                                                    {profile.whatsapp}
+                                            <div className={cn(
+                                                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold whitespace-nowrap shrink-0",
+                                                profile.points >= 10 
+                                                    ? "bg-amber-500/20 text-amber-500 border border-amber-500/20 shadow-[0_0_10px_-2px_rgba(245,158,11,0.3)]" 
+                                                    : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+                                            )}>
+                                                <Star className="w-3.5 h-3.5 fill-current" />
+                                                {profile.points}
+                                            </div>
+                                        </div>
+                                        {/* Line 2: Phone and Badge */}
+                                        <div className="flex justify-between items-center w-full mb-4">
+                                            <div className="text-sm text-zinc-500 font-mono">
+                                                {profile.whatsapp}
+                                            </div>
+                                            {profile.role === 'admin' && (
+                                                <span className="px-2 py-0.5 text-[10px] font-bold bg-zinc-800 text-zinc-500 rounded border border-zinc-700/50 uppercase tracking-wider">
+                                                    ADMIN
                                                 </span>
-                                                {profile.role === 'admin' && (
-                                                    <span className="px-1.5 py-0.5 text-[10px] font-bold bg-zinc-800 text-zinc-500 rounded border border-zinc-700/50">
-                                                        ADMIN
-                                                    </span>
-                                                )}
-                                            </div>
+                                            )}
                                         </div>
-
-                                        {/* Col 2: Gastables (3 cols) - Large Gold Font */}
-                                        <div className="col-span-3 flex justify-center">
-                                            <div className="flex items-center gap-2">
-                                                <Star className={cn(
-                                                    "w-5 h-5",
-                                                    profile.points >= 10 ? "text-amber-500 fill-amber-500" : "text-zinc-600"
-                                                )} />
-                                                <span className={cn(
-                                                    "text-2xl font-bold tracking-tight",
-                                                    profile.points >= 10 ? "text-amber-500" : "text-zinc-500"
-                                                )}>
-                                                    {profile.points}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        {/* Col 3: Histórico (2 cols) - Ver Button */}
-                                        <div className="col-span-2 flex justify-center">
-                                             <Button 
-                                                variant="ghost" 
-                                                size="sm" 
-                                                className="text-zinc-500 hover:text-white hover:bg-white/10"
-                                                title="Ver Historial"
-                                                onClick={() => {}} // Placeholder: Connect to history logic later
-                                             >
-                                                <Eye className="w-4 h-4 mr-1" />
-                                                <span className="text-xs">Ver</span>
-                                             </Button>
-                                        </div>
-
-                                        {/* Col 4: Acciones (3 cols) - Complex Grid */}
-                                        <div className="col-span-3 flex flex-col gap-2">
-                                            {/* Top Row: + - Key */}
-                                            <div className="flex items-center justify-between gap-2">
-                                                <div className="flex items-center gap-1">
-                                                    <Button
-                                                        size="sm"
-                                                        className="h-7 w-8 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/20"
-                                                        onClick={() => handleOpenAdjustModal(profile, 5)}
-                                                        title="Sumar (+)"
-                                                    >
-                                                        <Plus className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        className="h-7 w-8 bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20"
-                                                        onClick={() => handleOpenAdjustModal(profile, -5)}
-                                                        title="Restar (-)"
-                                                    >
-                                                        <Minus className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    className="h-7 w-7 text-zinc-600 hover:text-zinc-300"
-                                                    onClick={() => setResetPinModal({ isOpen: true, profile, newPin: '' })}
-                                                    title="Resetear PIN"
-                                                >
-                                                    <KeyRound className="w-3.5 h-3.5" />
-                                                </Button>
-                                            </div>
-
-                                            {/* Middle Row: Canjear (Full Width) */}
+                                        {/* Actions Grid (Grid Cols 2) */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Button 
+                                                size="lg"
+                                                className="h-12 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95 transition-all rounded-xl"
+                                                onClick={() => handleOpenAdjustModal(profile, 5)}
+                                            >
+                                                <Plus className="w-6 h-6" />
+                                            </Button>
+                                            <Button 
+                                                size="lg"
+                                                className="h-12 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 active:scale-95 transition-all rounded-xl"
+                                                onClick={() => handleOpenAdjustModal(profile, -5)}
+                                            >
+                                                <Minus className="w-6 h-6" />
+                                            </Button>
                                             <Button
-                                                size="sm"
-                                                className="w-full h-8 bg-amber-500 hover:bg-amber-600 text-black font-bold shadow-[0_0_10px_-2px_rgba(245,158,11,0.3)] transition-all"
+                                                className="col-span-2 h-14 bg-amber-500 hover:bg-amber-600 text-black font-bold text-lg shadow-[0_0_15px_-3px_rgba(245,158,11,0.4)] rounded-xl active:scale-95 transition-all border border-amber-400/50"
                                                 onClick={() => setSelectionModal({ isOpen: true, profile })}
                                             >
-                                                <Gift className="w-3.5 h-3.5 mr-1.5" />
-                                                Canjear
+                                                <Gift className="w-6 h-6 mr-2" />
+                                                CANJEAR
                                             </Button>
-
-                                            {/* Bottom Row: Input + Apply */}
-                                            <div className="flex items-center gap-1">
-                                                <Input
-                                                    type="number"
-                                                    className="h-7 text-xs bg-zinc-950/30 border-white/10 focus:border-amber-500/50 px-2"
-                                                    placeholder="0"
+                                            <div className="col-span-2 flex gap-2 h-12">
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="Manual..." 
+                                                    className="h-full bg-zinc-950/50 border-white/10 px-4 rounded-xl focus-visible:ring-0 focus-visible:border-amber-500/50 text-base flex-1"
                                                     value={customPoints[profile.id] || ''}
                                                     onChange={(e) => handleCustomPointsChange(profile.id, e.target.value)}
                                                 />
-                                                <Button
-                                                    size="sm"
-                                                    variant="secondary"
-                                                    className="h-7 text-[10px] px-2 bg-zinc-800 text-zinc-400 hover:text-white"
+                                                <Button 
+                                                    variant="secondary" 
+                                                    className="h-full px-6 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white border border-white/5 active:scale-95 transition-all font-bold"
                                                     onClick={() => handleApplyCustomPoints(profile)}
                                                 >
-                                                    Aplicar
+                                                    OK
                                                 </Button>
                                             </div>
                                         </div>
                                     </div>
                                 ))}
-                                {profiles.length === 0 && (
-                                    <div className="text-center py-16">
-                                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-900 mb-4">
-                                            <Search className="w-8 h-8 text-zinc-700" />
-                                        </div>
-                                        <p className="text-zinc-500">No se encontraron clientes.</p>
-                                        {search && (
-                                            <Button
-                                                variant="link"
-                                                onClick={() => setSearch('')}
-                                                className="text-primary mt-2"
-                                            >
-                                                Limpiar búsqueda
-                                            </Button>
-                                        )}
-                                    </div>
-                                )}
                             </div>
-                        </div>
-                        {/* Mobile List View (Sleek & Compact) */}
-                        <div className="flex flex-col gap-2 md:hidden pb-24">
-                            {profiles.map((profile) => (
-                                <div key={profile.id} className="flex flex-col w-full bg-zinc-900/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden shadow-lg p-3">
-                                    
-                                    {/* Line 1: Name and Points */}
-                                    <div className="flex justify-between items-center w-full mb-1">
-                                        <div className="font-bold text-base text-white truncate mr-2 flex-1">
-                                            {profile.full_name || 'Sin Nombre'}
-                                        </div>
-                                        <div className={cn(
-                                            "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap shrink-0",
-                                            profile.points >= 10 
-                                                ? "bg-amber-500/20 text-amber-500 border border-amber-500/20 shadow-[0_0_10px_-2px_rgba(245,158,11,0.3)]" 
-                                                : "bg-zinc-800 text-zinc-400 border border-zinc-700"
-                                        )}>
-                                            <Star className="w-3 h-3 fill-current" />
-                                            {profile.points}
-                                        </div>
-                                    </div>
 
-                                    {/* Line 2: Phone and Badge */}
-                                    <div className="flex justify-between items-center w-full mb-2.5">
-                                        <div className="text-xs text-zinc-500 font-mono">
-                                            {profile.whatsapp}
-                                        </div>
-                                        {profile.role === 'admin' && (
-                                            <span className="px-1.5 py-0.5 text-[9px] font-bold bg-zinc-800 text-zinc-500 rounded border border-zinc-700/50 uppercase tracking-wider">
-                                                ADMIN
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Actions Grid (Optimized Compact) */}
-                                    <div className="grid grid-cols-1 gap-2">
-                                        {/* Row 1: Quick Actions (3 columns) */}
-                                        <div className="grid grid-cols-3 gap-2">
-                                            <Button 
-                                                size="sm"
-                                                className="h-9 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95 transition-all rounded-lg"
-                                                onClick={() => handleOpenAdjustModal(profile, 5)}
-                                            >
-                                                <Plus className="w-4 h-4" />
-                                            </Button>
+                            {/* DESKTOP VIEW (Table Layout) */}
+                            <div className="hidden md:block w-full overflow-hidden rounded-xl border border-white/5 bg-zinc-900/50">
+                                <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/5 bg-white/5 text-sm font-medium text-muted-foreground">
+                                    <div className="col-span-4">Usuario</div>
+                                    <div className="col-span-2 text-center">Gastables</div>
+                                    <div className="col-span-2 text-center">Histórico</div>
+                                    <div className="col-span-4 text-center">Acciones</div>
+                                </div>
+                                <div className="divide-y divide-white/5">
+                                    {profiles.map((profile) => (
+                                        <div key={profile.id} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-white/5 transition-colors group">
+                                            {/* User Info */}
+                                            <div className="col-span-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="font-bold text-white truncate">
+                                                        {profile.full_name || 'Sin Nombre'}
+                                                    </div>
+                                                    {profile.role === 'admin' && (
+                                                        <span className="px-1.5 py-0.5 text-[10px] font-bold bg-zinc-800 text-zinc-500 rounded border border-zinc-700/50 uppercase tracking-wider">
+                                                            ADMIN
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="text-xs text-zinc-500 font-mono">
+                                                    {profile.whatsapp}
+                                                </div>
+                                            </div>
                                             
-                                            <Button 
-                                                size="sm"
-                                                className="h-9 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 active:scale-95 transition-all rounded-lg"
-                                                onClick={() => handleOpenAdjustModal(profile, -5)}
-                                            >
-                                                <Minus className="w-4 h-4" />
-                                            </Button>
-
-                                            <Button 
-                                                variant="secondary" 
-                                                size="sm"
-                                                className="h-9 bg-zinc-800 text-zinc-400 hover:text-white border border-white/5 active:scale-95 transition-all rounded-lg"
-                                                onClick={() => handleApplyCustomPoints(profile)}
-                                            >
-                                                <Key className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-
-                                        {/* Row 2: Canjear (Full Width) */}
-                                        <Button
-                                            className="w-full h-9 bg-amber-500 hover:bg-amber-600 text-black font-bold text-sm shadow-[0_0_15px_-3px_rgba(245,158,11,0.4)] rounded-lg active:scale-95 transition-all border border-amber-400/50"
-                                            onClick={() => setSelectionModal({ isOpen: true, profile })}
-                                        >
-                                            <Gift className="w-4 h-4 mr-2" />
-                                            CANJEAR
-                                        </Button>
-                                        
-                                        {/* Hidden Custom Input (Shown only when needed or managed via Modal/Popovers to save space) 
-                                            For this sleek version, we assume the 'Key' button or similar triggers manual entry logic 
-                                            or keeps the input but very compact. 
-                                            User requested: "For the +, -, and Key icons, use a 3-column grid... fit in a single row"
-                                            The input field itself takes space. Let's keep it conditional or simplified if possible, 
-                                            but based on prompt "The 'Canjear' button... For the +, -, and Key icons...", 
-                                            it implies the custom input might be secondary or handled differently.
+                                            {/* Points */}
+                                            <div className="col-span-2 flex justify-center">
+                                                <div className={cn(
+                                                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-bold whitespace-nowrap",
+                                                    profile.points >= 10 
+                                                        ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" 
+                                                        : "bg-zinc-800/50 text-zinc-400 border border-zinc-700/50"
+                                                )}>
+                                                    <Star className="w-3.5 h-3.5 fill-current" />
+                                                    {profile.points}
+                                                </div>
+                                            </div>
                                             
-                                            However, the user prompt explicitly said: "For the +, -, and Key icons, use a 3-column grid... 
-                                            At the bottom, a small numeric input field with an 'Aplicar' button next to it for custom point adjustments." 
-                                            Wait, the prompt says "For the +, -, and Key icons...". 
-                                            I will interpret "Key icon" as the toggle or submit for manual entry, 
-                                            or I should place the input row below if it's strictly needed always visible.
+                                            {/* History */}
+                                            <div className="col-span-2 flex justify-center">
+                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-blue-500/20 hover:text-blue-400 text-zinc-500">
+                                                    <Clock className="w-4 h-4" />
+                                                </Button>
+                                            </div>
                                             
-                                            Let's re-read carefully: "Action Buttons Grid: ... For the +, -, and Key icons, use a 3-column grid...". 
-                                            It seems the 'Key' button replaces the inline input+button combo for the compact view, 
-                                            likely opening a modal (like the existing adjust modal) or toggling the input.
-                                            
-                                            Given the existing `handleApplyCustomPoints` uses `customPoints` state, 
-                                            I will keep the input visible but VERY compact if needed, 
-                                            OR better, per the "Key icon" instruction, I will make the Key button 
-                                            focus/reveal the input or just use the modal logic. 
-                                            
-                                            Actually, let's implement the 3-col grid as requested: +, -, Key. 
-                                            And then Canjear. 
-                                            The 'Key' button will trigger the manual input logic (focus or apply).
-                                            But since we need a place to TYPE the number, I'll add a compact input row 
-                                            that appears only when 'Key' is active or just keep it simple.
-                                            
-                                            To strictly follow "Key icons... 3-column grid":
-                                            I will place the input row below IF the user wants to type, 
-                                            or maybe the 'Key' button IS the manual entry trigger.
-                                            Let's use the 'Key' button to toggle a small input row below, 
-                                            or just show the input row constantly but compact?
-                                            The prompt says "For the +, -, and Key icons...". 
-                                            I'll implement the 3 buttons. 
-                                            And I'll add the input field below ONLY if a value is typed? 
-                                            No, I'll put the input field in the 3rd slot instead of a Key icon? 
-                                            No, "Key icons". 
-                                            
-                                            Decision: 3 Buttons (+, -, Key). 
-                                            'Key' opens the Manual Adjustment Modal (which already exists and works great).
-                                            This saves the most space.
-                                        */}
-                                    </div>
-                                    
-                                    {/* Optional: Inline Input for Custom Points (if user insists on typing in-card)
-                                        The previous code had an inline input. 
-                                        If I remove it, I must ensure 'Key' opens a modal. 
-                                        `handleApplyCustomPoints` uses `customPoints[profile.id]`.
-                                        If I change 'Key' to open a modal, I need to adjust the handler or UI.
-                                        
-                                        Let's compromise: 
-                                        Row 1: +, -, Key (Toggle Input)
-                                        Row 2: Input (Visible only if Toggled) - THIS IS SLEEK.
-                                        Row 3: Canjear.
-                                        
-                                        Actually, simpler: 
-                                        The user said: "At the bottom, a small numeric input field..." in the PREVIOUS prompt.
-                                        In THIS prompt: "For the +, -, and Key icons, use a 3-column grid".
-                                        So I will implement the 3-col grid. 
-                                        I will map the 'Key' button to `handleApplyCustomPoints` 
-                                        but we need the input field. 
-                                        
-                                        Let's put the input field in the grid? No, "Key icons".
-                                        I will put the Input field + OK button as a hidden/expandable section 
-                                        OR just below the 3-col grid, very compact.
-                                        
-                                        Refined Plan:
-                                        Row 1: +, -, Key (Focus/Show Input)
-                                        Row 2 (Conditional): Input Field + OK (if Key pressed)
-                                        Row 3: Canjear.
-                                        
-                                        Wait, "Action Buttons Grid... The 'Canjear' button... For the +, -, and Key icons...".
-                                        It implies Canjear is separate.
-                                        
-                                        Let's stick to the prompt's "Key icon" literally. 
-                                        I'll add the Input field row but make it look like a part of the "Key" interaction 
-                                        or just below. 
-                                        Actually, if I look at `handleApplyCustomPoints`, it reads from `customPoints`.
-                                        I will add the input field as a compact row below the buttons if `customPoints` has a value 
-                                        or just always visible but small? 
-                                        "Sleek & Compact" -> Hide until needed. 
-                                        But to be safe and functional without complex state changes right now, 
-                                        I will make the 'Key' button simply focus an input that is 
-                                        visually integrated or just use the input directly in the 3rd slot?
-                                        Input in 3rd slot is tight.
-                                        
-                                        Let's go with:
-                                        Grid Cols 3: [+], [-], [Input]
-                                        Canjear below.
-                                        
-                                        BUT user said "Key icons". 
-                                        I will use:
-                                        Grid Cols 3: [+], [-], [Key (Manual Mode)]
-                                        [Canjear]
-                                        
-                                        And when [Key] is clicked -> Open the `adjustModal` with 0 so user can type? 
-                                        Yes! `handleOpenAdjustModal(profile, 0)` could be interpreted as "Manual".
-                                        The `adjustModal` supports manual input? 
-                                        Currently `handleOpenAdjustModal` takes a fixed value.
-                                        I might need to tweak `handleOpenAdjustModal` to support custom entry 
-                                        OR just leave the inline input row but make it `hidden` by default?
-                                        
-                                        Let's look at the code I'm replacing:
-                                        It had `Input` and `Button OK`.
-                                        
-                                        I will replace the inline input with a "Key" button that opens a new `ManualEntry` state 
-                                        or just keeps the input visible but very small.
-                                        
-                                        ACTUALLY, simplest interpretation of "Key icon" in a grid:
-                                        Use the Key button to TOGGLE the visibility of the input row.
-                                        I'll add a local state? No, avoid complex refactors if possible.
-                                        
-                                        Alternative: The "Key" button IS the submit button for the input. 
-                                        And the input is always there? No, takes space.
-                                        
-                                        Let's try:
-                                        Grid Cols 3: [+], [-], [Manual (Key Icon)]
-                                        [Canjear]
-                                        
-                                        Clicking [Manual] opens the existing `adjustModal` but allows typing?
-                                        The current `adjustModal` is "Confirmar +/- X". 
-                                        I will add a `handleOpenManualModal(profile)`?
-                                        
-                                        Better yet, I'll just keep the Input row but make it `h-9` and full width below the grid?
-                                        User asked for "Action Buttons Grid... For the +, -, and Key icons...".
-                                        I will assume the user WANTS the 3-col grid.
-                                        I'll put the input field in the "Key" slot? No.
-                                        
-                                        I will implement:
-                                        Row 1: [Canjear] (Top priority)
-                                        Row 2: [+], [-], [Input field with Key icon inside?]
-                                        
-                                        User said: "The 'Canjear' button should have a smaller height... For the +, -, and Key icons, use a 3-column grid".
-                                        So:
-                                        Row 1: [+], [-], [Key]
-                                        Row 2: [Canjear]
-                                        
-                                        And I will add the `Input` field below, visible ONLY if `customPoints[profile.id]` is not empty?
-                                        Or just replace the [Key] button with the Input field?
-                                        "Key icon" implies a button.
-                                        
-                                        Let's go with the most robust "Sleek" option:
-                                        1. [+], [-], [Key]
-                                        2. [Canjear]
-                                        3. If [Key] is clicked, show Input row? 
-                                        
-                                        I'll implement the layout exactly as requested visually:
-                                        <div className="grid grid-cols-3 gap-2">
-                                            <Button + />
-                                            <Button - />
-                                            <div className="relative">
-                                                <Input className="pl-8..." placeholder="Man..." />
-                                                <Key className="absolute left-2..." />
+                                            {/* Actions */}
+                                            <div className="col-span-4 flex items-center justify-center gap-2">
+                                                <Button 
+                                                    size="icon" 
+                                                    className="h-9 w-9 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20 rounded-lg"
+                                                    onClick={() => handleOpenAdjustModal(profile, 5)}
+                                                >
+                                                    <Plus className="w-5 h-5" />
+                                                </Button>
+                                                <Button 
+                                                    size="icon" 
+                                                    className="h-9 w-9 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 rounded-lg"
+                                                    onClick={() => handleOpenAdjustModal(profile, -5)}
+                                                >
+                                                    <Minus className="w-5 h-5" />
+                                                </Button>
+                                                <Button 
+                                                    className="h-9 bg-amber-500 hover:bg-amber-600 text-black font-bold px-3 rounded-lg shadow-sm"
+                                                    onClick={() => setSelectionModal({ isOpen: true, profile })}
+                                                >
+                                                    <Gift className="w-4 h-4 mr-1.5" />
+                                                    Canjear
+                                                </Button>
+                                                <div className="w-px h-6 bg-white/10 mx-1"></div>
+                                                <div className="flex items-center gap-1">
+                                                    <Input 
+                                                        type="number" 
+                                                        className="w-16 h-9 bg-zinc-950/50 border-white/10 px-2 text-center rounded-lg text-xs"
+                                                        placeholder="±"
+                                                        value={customPoints[profile.id] || ''}
+                                                        onChange={(e) => handleCustomPointsChange(profile.id, e.target.value)}
+                                                    />
+                                                    <Button 
+                                                        size="icon"
+                                                        variant="ghost" 
+                                                        className="h-9 w-9 hover:bg-white/10 text-zinc-400 rounded-lg"
+                                                        onClick={() => handleApplyCustomPoints(profile)}
+                                                    >
+                                                        <Check className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
-                                        This fits 3 cols! Input in 3rd col.
-                                        
-                                        Let's do that. Input in the 3rd column with a Key icon.
-                                    */}
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <Button 
-                                            size="sm"
-                                            className="h-9 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500/20 active:scale-95 transition-all rounded-lg"
-                                            onClick={() => handleOpenAdjustModal(profile, 5)}
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                        </Button>
-                                        
-                                        <Button 
-                                            size="sm"
-                                            className="h-9 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 active:scale-95 transition-all rounded-lg"
-                                            onClick={() => handleOpenAdjustModal(profile, -5)}
-                                        >
-                                            <Minus className="w-4 h-4" />
-                                        </Button>
-
-                                        <div className="relative flex items-center">
-                                             <Input 
-                                                type="number" 
-                                                placeholder="#" 
-                                                className="h-9 bg-zinc-950/50 border-white/10 pr-2 pl-2 text-center rounded-lg focus-visible:ring-0 focus-visible:border-amber-500/50 text-xs w-full"
-                                                value={customPoints[profile.id] || ''}
-                                                onChange={(e) => handleCustomPointsChange(profile.id, e.target.value)}
-                                            />
-                                            {/* Small absolute button to apply if value exists */}
-                                            {customPoints[profile.id] && (
-                                                <button 
-                                                    onClick={() => handleApplyCustomPoints(profile)}
-                                                    className="absolute -top-2 -right-2 w-5 h-5 bg-amber-500 text-black rounded-full flex items-center justify-center shadow-lg animate-in zoom-in"
-                                                >
-                                                    <Check className="w-3 h-3" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Canjear Button */}
-                                    <Button
-                                        className="w-full h-9 bg-amber-500 hover:bg-amber-600 text-black font-bold text-sm shadow-[0_0_15px_-3px_rgba(245,158,11,0.4)] rounded-lg active:scale-95 transition-all border border-amber-400/50 mt-2"
-                                        onClick={() => setSelectionModal({ isOpen: true, profile })}
-                                    >
-                                        <Gift className="w-4 h-4 mr-2" />
-                                        CANJEAR
-                                    </Button>
+                                    ))}
                                 </div>
-                            ))}
-
+                            </div>
+                            
                             {profiles.length === 0 && (
-                                <div className="text-center py-12 text-muted-foreground">
+                                <div className="col-span-full text-center py-12 text-muted-foreground">
                                     <p>No se encontraron clientes.</p>
                                 </div>
                             )}
-                        </div>
                         </>
                     )}
                 </CardContent>
