@@ -359,22 +359,8 @@ export default function ClientManagement() {
                                                             <Minus className="h-4 w-4" />
                                                         </Button>
 
-                                                        {/* Redeem Button */}
-                                                        <Button
-                                                            size="sm"
-                                                            className={cn(
-                                                                "h-9 px-3 ml-1 font-semibold transition-all duration-300",
-                                                                profile.points >= 10 
-                                                                    ? "bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 shadow-xl shadow-amber-500/40 text-black border border-yellow-200/50 animate-pulse"
-                                                                    : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black shadow-lg shadow-amber-500/20"
-                                                            )}
-                                                            onClick={() => openRedeemModal(profile, 15, 'Corte Gratis')}
-                                                            disabled={profile.points < 5}
-                                                        >
-                                                            <Gift className="h-4 w-4 mr-1" />
-                                                            Canjear
-                                                        </Button>
-
+                                                        {/* Redeem Button (Removed, merged into select) */}
+                                                        
                                                         <Button
                                                             size="sm"
                                                             variant="ghost"
@@ -388,23 +374,23 @@ export default function ClientManagement() {
 
                                                     {/* Quick redeem options */}
                                                     <div className="flex items-center gap-1.5">
-                                                        {[5, 10, 15].map((amount) => (
-                                                            <button
-                                                                key={amount}
-                                                                onClick={() => openRedeemModal(
-                                                                    profile,
-                                                                    amount,
-                                                                    amount === 5 ? 'Descuento' : amount === 10 ? 'Mitad de Precio' : 'Corte Gratis'
-                                                                )}
-                                                                disabled={profile.points < amount}
-                                                                className={`px-2 py-1 text-xs rounded-md transition-all ${profile.points >= amount
-                                                                    ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white'
-                                                                    : 'bg-zinc-900 text-zinc-600 cursor-not-allowed'
-                                                                    }`}
-                                                            >
-                                                                -{amount}
-                                                            </button>
-                                                        ))}
+                                                        <select
+                                                            className="h-9 px-2 text-xs rounded-md bg-zinc-900 border border-zinc-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                                            onChange={(e) => {
+                                                                if (e.target.value) {
+                                                                    const amount = parseInt(e.target.value)
+                                                                    const reward = amount === 5 ? 'Bebida' : amount === 10 ? '20% Off' : 'Corte Gratis'
+                                                                    openRedeemModal(profile, amount, reward)
+                                                                    e.target.value = '' // Reset selection
+                                                                }
+                                                            }}
+                                                            disabled={profile.points < 5}
+                                                        >
+                                                            <option value="">Canjear...</option>
+                                                            <option value="5" disabled={profile.points < 5}>5 pts - Bebida</option>
+                                                            <option value="10" disabled={profile.points < 10}>10 pts - 20% Off</option>
+                                                            <option value="15" disabled={profile.points < 15}>15 pts - Corte</option>
+                                                        </select>
                                                     </div>
 
                                                     {/* Custom amount input */}
