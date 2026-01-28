@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import QRScanner from '@/components/QRScanner'
 import { Modal } from '@/components/ui/Modal'
 import { adjustPoints } from '@/app/server-actions'
@@ -11,11 +11,22 @@ import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function AdminScanner() {
+    const [hasMounted, setHasMounted] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [scannedUser, setScannedUser] = useState<{ id: string, name: string, points: number } | null>(null)
     const [pointsToAdd, setPointsToAdd] = useState(1)
     const [confirmModalOpen, setConfirmModalOpen] = useState(false)
     const [showSuccessAnimation, setShowSuccessAnimation] = useState(false)
+
+    useEffect(() => {
+        setHasMounted(true)
+    }, [])
+
+    if (!hasMounted) {
+        return (
+            <div className="w-full h-16 bg-zinc-800/50 rounded-lg border border-white/5 animate-pulse" suppressHydrationWarning />
+        )
+    }
 
     const handleScan = async (scannedText: string) => {
         setIsProcessing(true)

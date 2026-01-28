@@ -329,13 +329,15 @@ export async function adjustPoints(userId: string, amount: number, description?:
 
     const { data: adminProfile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, full_name')
         .eq('id', user.id)
         .single()
     
     if (adminProfile?.role !== 'admin') {
         return { error: 'Forbidden: Admins only' }
     }
+
+    const adminName = adminProfile.full_name || 'Admin'
 
     // 2. Use Service Role to bypass RLS
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -406,13 +408,16 @@ export async function adjustPoints(userId: string, amount: number, description?:
 
         // 5. Transaction Log (Crucial for Last Visit Date)
         if (pointsValue !== 0) {
+            const baseDescription = description || (pointsValue > 0 ? 'Carga Manual' : 'Canje de Puntos')
+            const finalDescription = `${baseDescription} (Por: ${adminName})`
+
             const { error: txError } = await supabaseAdmin
                 .from('transactions')
                 .insert({
                     user_id: safeId,
                     type: pointsValue > 0 ? 'earn' : 'redeem',
                     amount: Math.abs(pointsValue),
-                    description: description || (pointsValue > 0 ? 'Carga Manual (Admin)' : 'Canje de Puntos')
+                    description: finalDescription
                 })
             
             if (txError) {
@@ -576,17 +581,16 @@ export async function getAdminStats() {
     .eq('type', 'earn')
     .gte('created_at', today.toISOString())
 
-  // 3. Ready for Reward (Clients with >= 15 points)
-  const { count: readyForReward } = await supabase
-    .from('profiles')
+  // 3. Total Rewards Redeemed (All time)
+  const { count: totalRedeemed } = await supabase
+    .from('transactions')
     .select('*', { count: 'exact', head: true })
-    .gte('points', 15)
-    .neq('role', 'admin')
+    .eq('type', 'redeem')
 
   return {
     totalClients: totalClients || 0,
     visitsToday: visitsToday || 0,
-    readyForReward: readyForReward || 0
+    totalRedeemed: totalRedeemed || 0
   }
 }
 

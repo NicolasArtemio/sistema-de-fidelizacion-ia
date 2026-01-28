@@ -1,6 +1,7 @@
 // components/loyalty/LastVisitCard.tsx
 'use client'
 
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Calendar, AlertCircle, Scissors, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,12 @@ interface LastVisitCardProps {
 }
 
 export default function LastVisitCard({ lastVisitDate }: LastVisitCardProps) {
+    const [hasMounted, setHasMounted] = useState(false)
+
+    useEffect(() => {
+        setHasMounted(true)
+    }, [])
+
     const today = new Date()
     const lastVisit = lastVisitDate ? new Date(lastVisitDate) : null
     
@@ -27,6 +34,10 @@ export default function LastVisitCard({ lastVisitDate }: LastVisitCardProps) {
     const barberPhone = '5492284716778'  // Added 549 prefix for Argentina mobile
     const bookingMessage = "Hola! Quiero reservar un turno para mi próximo corte."
     const whatsappLink = `https://wa.me/${barberPhone}?text=${encodeURIComponent(bookingMessage)}`
+
+    if (!hasMounted) {
+        return <div className="h-32 bg-white/5 rounded-xl animate-pulse" />
+    }
 
     if (!lastVisit) {
         // Fallback for new users

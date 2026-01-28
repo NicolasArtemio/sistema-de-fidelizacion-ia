@@ -3,6 +3,7 @@ import { logout, getAtRiskClientCount, getAdminStats } from '@/app/server-action
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import AdminScanner from '@/components/admin/AdminScanner'
+import AdminStats from '@/components/admin/AdminStats'
 import ClientManagement from '@/components/admin/ClientManagement'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -106,41 +107,7 @@ export default async function AdminDashboard() {
                     </section>
 
                     {/* Stats Overview */}
-                    <section className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <Card className="bg-zinc-900/50 border-white/5">
-                            <CardContent className="p-4 md:p-6 flex flex-col md:flex-row items-center md:items-start gap-2 md:gap-4 text-center md:text-left">
-                                <div className="p-2 md:p-3 bg-blue-500/10 rounded-full">
-                                    <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-500" />
-                                </div>
-                                <div>
-                                    <p className="text-xs md:text-sm text-muted-foreground">Clientes</p>
-                                    <p className="text-xl md:text-2xl font-bold">{stats.totalClients}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-zinc-900/50 border-white/5">
-                            <CardContent className="p-4 md:p-6 flex flex-col md:flex-row items-center md:items-start gap-2 md:gap-4 text-center md:text-left">
-                                <div className="p-2 md:p-3 bg-emerald-500/10 rounded-full">
-                                    <CalendarCheck className="w-5 h-5 md:w-6 md:h-6 text-emerald-500" />
-                                </div>
-                                <div>
-                                    <p className="text-xs md:text-sm text-muted-foreground">Visitas</p>
-                                    <p className="text-xl md:text-2xl font-bold">{stats.visitsToday}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-zinc-900/50 border-white/5 col-span-2 md:col-span-1">
-                            <CardContent className="p-4 md:p-6 flex flex-col md:flex-row items-center md:items-start gap-2 md:gap-4 text-center md:text-left">
-                                <div className="p-2 md:p-3 bg-amber-500/10 rounded-full">
-                                    <Gift className="w-5 h-5 md:w-6 md:h-6 text-amber-500" />
-                                </div>
-                                <div>
-                                    <p className="text-xs md:text-sm text-muted-foreground">Premios</p>
-                                    <p className="text-xl md:text-2xl font-bold text-amber-500">{stats.readyForReward}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </section>
+                    <AdminStats initialStats={stats} />
 
                     <section className="md:col-span-2">
                         <ClientManagement />

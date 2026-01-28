@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, Plus, Minus, Gift, Loader2, Sparkles, KeyRound, Check, Trophy, Lightbulb, Star } from 'lucide-react'
+import { Search, Plus, Minus, Gift, Loader2, Sparkles, KeyRound, Check, Trophy, Lightbulb, Star, Scissors } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
 
-import { Modal, RedeemModal, useModal } from '@/components/ui/Modal'
+import { Modal, useModal } from '@/components/ui/Modal'
+import BarberLoader from '@/components/ui/BarberLoader'
 import { Label } from '@/components/ui/label'
 import { adjustPoints, resetUserPin } from '@/app/server-actions'
 import { cn } from '@/lib/utils'
@@ -19,10 +20,15 @@ import AdminHistory from '@/components/admin/AdminHistory'
 import { Profile } from '@/types'
 
 export default function ClientManagement() {
+    const [hasMounted, setHasMounted] = useState(false)
     const [profiles, setProfiles] = useState<Profile[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const supabase = createClient()
+
+    useEffect(() => {
+        setHasMounted(true)
+    }, [])
 
     // Modal states
     const modal = useModal()
@@ -36,6 +42,14 @@ export default function ClientManagement() {
         profile: null,
         amount: 0,
         reward: '',
+    })
+
+    const [selectionModal, setSelectionModal] = useState<{
+        isOpen: boolean
+        profile: Profile | null
+    }>({
+        isOpen: false,
+        profile: null,
     })
 
     const [resetPinModal, setResetPinModal] = useState<{
@@ -258,6 +272,14 @@ export default function ClientManagement() {
         })
     }
 
+    if (!hasMounted) {
+        return (
+            <div className="w-full flex items-center justify-center py-12" suppressHydrationWarning>
+                <BarberLoader text="Cargando panel..." />
+            </div>
+        )
+    }
+
     return (
         <>
             <Card className="w-full bg-card border-white/5">
@@ -283,9 +305,8 @@ export default function ClientManagement() {
                 </CardHeader>
                 <CardContent>
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center p-12 gap-3">
-                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                            <p className="text-sm text-muted-foreground">Cargando clientes...</p>
+                        <div className="py-12">
+                            <BarberLoader fullScreen={false} text="Sincronizando clientes..." />
                         </div>
                     ) : (
                         <>
@@ -374,23 +395,18 @@ export default function ClientManagement() {
 
                                                     {/* Quick redeem options */}
                                                     <div className="flex items-center gap-1.5">
-                                                        <select
-                                                            className="h-9 px-2 text-xs rounded-md bg-zinc-900 border border-zinc-700 text-white focus:outline-none focus:ring-1 focus:ring-amber-500"
-                                                            onChange={(e) => {
-                                                                if (e.target.value) {
-                                                                    const amount = parseInt(e.target.value)
-                                                                    const reward = amount === 5 ? 'Bebida' : amount === 10 ? '20% Off' : 'Corte Gratis'
-                                                                    openRedeemModal(profile, amount, reward)
-                                                                    e.target.value = '' // Reset selection
-                                                                }
-                                                            }}
-                                                            disabled={profile.points < 5}
-                                                        >
-                                                            <option value="">Canjear...</option>
-                                                            <option value="5" disabled={profile.points < 5}>5 pts - Bebida</option>
-                                                            <option value="10" disabled={profile.points < 10}>10 pts - 20% Off</option>
-                                                            <option value="15" disabled={profile.points < 15}>15 pts - Corte</option>
-                                                        </select>
+                                                        {profile.points >= 5 && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="h-9 px-3 border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/50 flex items-center gap-2"
+                                                                onClick={() => setSelectionModal({ isOpen: true, profile })}
+                                                                title="Canjear Puntos"
+                                                            >
+                                                                <Gift className="w-4 h-4" />
+                                                                <span className="hidden sm:inline font-bold">Canjear</span>
+                                                            </Button>
+                                                        )}
                                                     </div>
 
                                                     {/* Custom amount input */}
@@ -648,6 +664,87 @@ export default function ClientManagement() {
                         )
                     )}
                 </AnimatePresence>
+            </Modal>
+
+            {/* Selection Modal */}
+            <Modal
+                isOpen={selectionModal.isOpen}
+                onClose={() => setSelectionModal({ isOpen: false, profile: null })}
+                title="Seleccionar Recompensa"
+                message={`¿Qué desea canjear ${selectionModal.profile?.full_name || 'el cliente'}?`}
+                type="redeem"
+                hideButtons
+            >
+                <div className="grid grid-cols-1 gap-3 pt-2">
+                    <Button
+                        variant="outline"
+                        className="h-16 justify-between px-4 border-zinc-700 hover:bg-zinc-800 hover:border-amber-500/50 group"
+                        disabled={(selectionModal.profile?.points || 0) < 5}
+                        onClick={() => {
+                            if (selectionModal.profile) {
+                                openRedeemModal(selectionModal.profile, 5, 'Bebida')
+                                setSelectionModal({ isOpen: false, profile: null })
+                            }
+                        }}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                                <Gift className="w-4 h-4 text-amber-500" />
+                            </div>
+                            <div className="flex flex-col items-start text-left">
+                                <span className="font-bold text-white">Canjear Bebida</span>
+                                <span className="text-xs text-zinc-400">Cerveza, Gaseosa, etc.</span>
+                            </div>
+                        </div>
+                        <span className="font-bold text-amber-500">5 pts</span>
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        className="h-16 justify-between px-4 border-zinc-700 hover:bg-zinc-800 hover:border-amber-500/50 group"
+                        disabled={(selectionModal.profile?.points || 0) < 10}
+                        onClick={() => {
+                            if (selectionModal.profile) {
+                                openRedeemModal(selectionModal.profile, 10, '20% Off Clothing')
+                                setSelectionModal({ isOpen: false, profile: null })
+                            }
+                        }}
+                    >
+                         <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                                <Gift className="w-4 h-4 text-amber-500" />
+                            </div>
+                            <div className="flex flex-col items-start text-left">
+                                <span className="font-bold text-white">Canjear Descuento</span>
+                                <span className="text-xs text-zinc-400">20% en Indumentaria</span>
+                            </div>
+                        </div>
+                        <span className="font-bold text-amber-500">10 pts</span>
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        className="h-16 justify-between px-4 border-zinc-700 hover:bg-zinc-800 hover:border-amber-500/50 group"
+                        disabled={(selectionModal.profile?.points || 0) < 15}
+                        onClick={() => {
+                            if (selectionModal.profile) {
+                                openRedeemModal(selectionModal.profile, 15, 'Corte Gratis')
+                                setSelectionModal({ isOpen: false, profile: null })
+                            }
+                        }}
+                    >
+                         <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                                <Scissors className="w-4 h-4 text-amber-500" />
+                            </div>
+                            <div className="flex flex-col items-start text-left">
+                                <span className="font-bold text-white">Corte Gratis</span>
+                                <span className="text-xs text-zinc-400">Servicio completo sin cargo</span>
+                            </div>
+                        </div>
+                        <span className="font-bold text-amber-500">15 pts</span>
+                    </Button>
+                </div>
             </Modal>
 
             {/* Redemption Modal */}

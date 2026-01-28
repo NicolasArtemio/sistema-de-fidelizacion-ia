@@ -22,9 +22,12 @@ export default function LiveDashboard({
 }: LiveDashboardProps) {
     const [points, setPoints] = useState(initialPoints)
     const [lastVisitDate, setLastVisitDate] = useState(initialLastVisitDate)
+    const [hasMounted, setHasMounted] = useState(false)
     const supabase = createClient()
 
     useEffect(() => {
+        setHasMounted(true)
+
         // 1. Subscribe to Profile Changes (Points)
         const profileChannel = supabase
             .channel('profile-updates')
@@ -72,6 +75,15 @@ export default function LiveDashboard({
             supabase.removeChannel(txChannel)
         }
     }, [userId, supabase])
+
+    if (!hasMounted) {
+        return (
+            <div className="space-y-8 max-w-md mx-auto mt-6">
+                <div className="h-32 bg-white/5 rounded-xl animate-pulse" />
+                <div className="h-48 bg-white/5 rounded-xl animate-pulse" />
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-8 max-w-md mx-auto mt-6">

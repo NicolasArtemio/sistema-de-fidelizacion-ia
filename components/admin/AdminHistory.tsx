@@ -108,19 +108,26 @@ export default function AdminHistory() {
                                             {tx.profiles?.full_name || 'Desconocido'}
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                {tx.type === 'earn' ? (
-                                                    <div className="p-1 rounded bg-emerald-500/10">
-                                                        <ArrowUpRight className="w-3 h-3 text-emerald-500" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="p-1 rounded bg-red-500/10">
-                                                        <ArrowDownLeft className="w-3 h-3 text-red-500" />
-                                                    </div>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    {tx.type === 'earn' ? (
+                                                        <div className="p-1 rounded bg-emerald-500/10">
+                                                            <ArrowUpRight className="w-3 h-3 text-emerald-500" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="p-1 rounded bg-red-500/10">
+                                                            <ArrowDownLeft className="w-3 h-3 text-red-500" />
+                                                        </div>
+                                                    )}
+                                                    <span className="text-sm font-medium text-zinc-200">
+                                                        {tx.description?.split(' (Por:')[0] || (tx.type === 'earn' ? 'Carga de Puntos' : 'Canje')}
+                                                    </span>
+                                                </div>
+                                                {tx.description?.includes('(Por:') && (
+                                                    <span className="text-[10px] text-zinc-500 ml-7 font-mono">
+                                                        {tx.description.match(/\(Por: .*?\)/)?.[0]}
+                                                    </span>
                                                 )}
-                                                <span className="text-sm text-muted-foreground">
-                                                    {tx.description || (tx.type === 'earn' ? 'Carga de Puntos' : 'Canje')}
-                                                </span>
                                             </div>
                                         </TableCell>
                                         <TableCell className={`text-right font-bold ${
