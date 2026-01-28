@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Loader2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Button } from '../ui/button'
 
 export default function AdminScanner() {
     const [hasMounted, setHasMounted] = useState(false)
@@ -120,8 +121,8 @@ export default function AdminScanner() {
                 onClose={() => !showSuccessAnimation && !isProcessing && setConfirmModalOpen(false)}
                 type="confirm"
                 title={showSuccessAnimation ? "¡Todo listo!" : "Cliente Identificado"}
-                message={showSuccessAnimation ? "" : `¿Cuántos puntos querés sumar a ${scannedUser?.name}?`}
-                confirmText="Cargar Puntos"
+                message={showSuccessAnimation ? "" : `¿Confirmás ${pointsToAdd >= 0 ? 'sumar' : 'descontar'} ${Math.abs(pointsToAdd)} puntos a ${scannedUser?.name}?`}
+                confirmText={pointsToAdd >= 0 ? "Cargar Puntos" : "Canjear Puntos"}
                 onConfirm={handleConfirmPoints}
                 isLoading={isProcessing}
                 hideButtons={showSuccessAnimation}
@@ -162,17 +163,45 @@ export default function AdminScanner() {
                                     </p>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="points">Puntos a sumar</Label>
-                                    <Input
-                                        id="points"
-                                        type="number"
-                                        min="1"
-                                        max="100"
-                                        value={pointsToAdd}
-                                        onChange={(e) => setPointsToAdd(parseInt(e.target.value) || 0)}
-                                        className="text-center text-xl font-bold bg-background/50"
-                                    />
+                                <div className="space-y-4">
+                                    <Label className="text-center block text-emerald-400">Sumar Puntos (Servicio)</Label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[5, 10, 15].map((amount) => (
+                                            <Button
+                                                key={`scan-add-${amount}`}
+                                                variant={pointsToAdd === amount ? "default" : "outline"}
+                                                className={`h-12 font-bold text-lg ${
+                                                    pointsToAdd === amount 
+                                                    ? "bg-emerald-500 text-white hover:bg-emerald-600" 
+                                                    : "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                                                }`}
+                                                onClick={() => setPointsToAdd(amount)}
+                                            >
+                                                +{amount}
+                                            </Button>
+                                        ))}
+                                    </div>
+
+                                    <div className="pt-2 border-t border-white/10">
+                                        <Label className="text-center block text-red-400 mb-2">Canjear (Premios)</Label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {[5, 10, 15].map((amount) => (
+                                                <Button
+                                                    key={`scan-sub-${amount}`}
+                                                    variant={pointsToAdd === -amount ? "default" : "outline"}
+                                                    className={`h-12 font-bold text-lg ${
+                                                        pointsToAdd === -amount 
+                                                        ? "bg-red-500 text-white hover:bg-red-600" 
+                                                        : "border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                                    }`}
+                                                    onClick={() => setPointsToAdd(-amount)}
+                                                    disabled={scannedUser.points < amount}
+                                                >
+                                                    -{amount}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </motion.div>
                         )

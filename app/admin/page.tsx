@@ -24,8 +24,8 @@ export default async function AdminDashboard() {
     const stats = await getAdminStats()
 
     return (
-        <div className="min-h-screen bg-background pb-20">
-            <header className="p-4 flex justify-between items-center border-b border-white/5 bg-background/50 backdrop-blur sticky top-0 z-50">
+        <div className="min-h-screen bg-background pb-20 overflow-x-hidden">
+            <header className="px-4 py-3 flex justify-between items-center border-b border-white/5 bg-background/50 backdrop-blur sticky top-0 z-50">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-3">
                         <div className="relative w-8 h-8">

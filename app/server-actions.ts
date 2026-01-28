@@ -378,6 +378,12 @@ export async function adjustPoints(userId: string, amount: number, description?:
             return { error: 'Invalid points amount (NaN)' }
         }
 
+        // Strict Point Scale Enforcement - RELAXED for Admin Custom Adjustments
+    // const ALLOWED_VALUES = [5, 10, 15, -5, -10, -15]
+    // if (!ALLOWED_VALUES.includes(pointsValue)) {
+    //     return { error: 'Valores no permitidos. Solo se permiten: ±5, ±10, ±15.' }
+    // }
+
         // 4. Update Strategy: Direct Update ONLY (RPC is unreliable)
         
         // Default Points: Ensure valid math
