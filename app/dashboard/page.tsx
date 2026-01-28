@@ -1,8 +1,7 @@
 import { getSessionUserProfile } from '@/app/auth-actions'
-import { logout } from '@/app/server-actions'
+import { logout, getLastVisitDate } from '@/app/server-actions'
 import { redirect } from 'next/navigation'
-import StampCard from '@/components/loyalty/StampCard'
-import ClientQR from '@/components/loyalty/ClientQR'
+import LiveDashboard from '@/components/loyalty/LiveDashboard'
 import { Button } from '@/components/ui/button'
 import { LogOut } from 'lucide-react'
 
@@ -16,6 +15,8 @@ export default async function Dashboard() {
     if (profile.role === 'admin') {
         redirect('/admin')
     }
+
+    const lastVisitDate = await getLastVisitDate(profile.id)
 
     return (
         <div className="min-h-screen bg-neutral-950 pb-20">
@@ -41,36 +42,13 @@ export default async function Dashboard() {
                 </form>
             </header>
 
-            <main className="p-4 space-y-8 max-w-md mx-auto mt-6">
-                
-                {/* Stamp Card */}
-                <section>
-                    <StampCard points={profile.points} />
-                </section>
-
-                {/* Personal QR Code */}
-                <section className="pt-4">
-                    <ClientQR userId={profile.id} userName={profile.full_name || 'Cliente'} />
-                </section>
-
-                {/* History / Info */}
-                <section className="text-center space-y-3">
-                    <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em]">Recompensas</h3>
-                    <div className="grid grid-cols-3 gap-2 text-xs text-zinc-400">
-                        <div className="p-3 border border-gold-500/20 rounded-lg bg-neutral-900/50 backdrop-blur-sm shadow-[0_0_10px_rgba(0,0,0,0.5)]">
-                            <span className="block text-gold-500 font-extrabold text-lg mb-1">5</span>
-                            Bebida
-                        </div>
-                        <div className="p-3 border border-gold-500/20 rounded-lg bg-neutral-900/50 backdrop-blur-sm shadow-[0_0_10px_rgba(0,0,0,0.5)]">
-                            <span className="block text-gold-500 font-extrabold text-lg mb-1">10</span>
-                            20% Off
-                        </div>
-                        <div className="p-3 border border-gold-500/20 rounded-lg bg-neutral-900/50 backdrop-blur-sm shadow-[0_0_10px_rgba(0,0,0,0.5)]">
-                            <span className="block text-gold-500 font-extrabold text-lg mb-1">15</span>
-                            Corte
-                        </div>
-                    </div>
-                </section>
+            <main className="p-4">
+                <LiveDashboard 
+                    initialPoints={profile.points} 
+                    initialLastVisitDate={lastVisitDate}
+                    userId={profile.id}
+                    userName={profile.full_name || 'Cliente'}
+                />
             </main>
         </div>
     )

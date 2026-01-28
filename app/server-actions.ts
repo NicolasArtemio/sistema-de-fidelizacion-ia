@@ -9,6 +9,20 @@ import { getSessionUserProfile, requireAdmin } from './auth-actions'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key'
 
+export async function getLastVisitDate(userId: string) {
+    const supabase = await createClient()
+    const { data } = await supabase
+        .from('transactions')
+        .select('created_at')
+        .eq('user_id', userId)
+        .eq('type', 'earn')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+    
+    return data?.created_at || null
+}
+
 export async function loginOrRegister(formData: FormData) {
     let redirectPath = '/dashboard'
 
@@ -389,6 +403,23 @@ export async function adjustPoints(userId: string, amount: number) {
 
         // UUID Casting: Trim one last time
         const safeId = userId.trim()
+
+        // 5. Transaction Log (Crucial for Last Visit Date)
+        if (pointsValue > 0) {
+            const { error: txError } = await supabaseAdmin
+                .from('transactions')
+                .insert({
+                    user_id: safeId,
+                    type: 'earn',
+                    amount: pointsValue,
+                    description: 'Carga Manual (Admin)'
+                })
+            
+            if (txError) {
+                console.warn('⚠️ [SERVER ACTION] Failed to log transaction:', txError)
+                // We don't block the main update, just warn
+            }
+        }
 
         const { data, error } = await supabaseAdmin
             .from('profiles')
