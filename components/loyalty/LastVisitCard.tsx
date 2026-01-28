@@ -23,8 +23,8 @@ export default function LastVisitCard({ lastVisitDate }: LastVisitCardProps) {
         ? new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'long', year: 'numeric' }).format(lastVisit)
         : 'N/A'
 
-    // Barber's WhatsApp (Placeholder - Update with real number)
-    const barberPhone = '5491112345678' 
+    // Barber's WhatsApp (Updated to Admin Number)
+    const barberPhone = '5492284716778'  // Added 549 prefix for Argentina mobile
     const bookingMessage = "Hola! Quiero reservar un turno para mi próximo corte."
     const whatsappLink = `https://wa.me/${barberPhone}?text=${encodeURIComponent(bookingMessage)}`
 

@@ -321,7 +321,7 @@ export async function generateQRToken() {
     return token
 }
 
-export async function adjustPoints(userId: string, amount: number) {
+export async function adjustPoints(userId: string, amount: number, description?: string) {
     // 1. Verify Admin (Security)
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -405,14 +405,14 @@ export async function adjustPoints(userId: string, amount: number) {
         const safeId = userId.trim()
 
         // 5. Transaction Log (Crucial for Last Visit Date)
-        if (pointsValue > 0) {
+        if (pointsValue !== 0) {
             const { error: txError } = await supabaseAdmin
                 .from('transactions')
                 .insert({
                     user_id: safeId,
-                    type: 'earn',
-                    amount: pointsValue,
-                    description: 'Carga Manual (Admin)'
+                    type: pointsValue > 0 ? 'earn' : 'redeem',
+                    amount: Math.abs(pointsValue),
+                    description: description || (pointsValue > 0 ? 'Carga Manual (Admin)' : 'Canje de Puntos')
                 })
             
             if (txError) {

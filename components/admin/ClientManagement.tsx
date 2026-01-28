@@ -15,13 +15,13 @@ import { Label } from '@/components/ui/label'
 import { adjustPoints, resetUserPin } from '@/app/server-actions'
 import { cn } from '@/lib/utils'
 
+import AdminHistory from '@/components/admin/AdminHistory'
 import { Profile } from '@/types'
 
 export default function ClientManagement() {
     const [profiles, setProfiles] = useState<Profile[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
-    const [actionLoading, setActionLoading] = useState<string | null>(null)
     const supabase = createClient()
 
     // Modal states
@@ -740,6 +740,8 @@ export default function ClientManagement() {
 
             {/* Hook-based modal */}
             {modal.Modal}
+
+            <AdminHistory />
         </>
     )
 }
