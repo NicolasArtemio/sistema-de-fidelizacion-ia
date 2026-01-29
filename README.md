@@ -40,6 +40,7 @@ Tulook is crafted with a **"Premium Dark"** aesthetic, utilizing deep zinc tones
 | **Styling** | [Tailwind CSS 4.0](https://tailwindcss.com/) / [shadcn/ui](https://ui.shadcn.com/) |
 | **Animations** | [Framer Motion](https://www.framer.com/motion/) / [Canvas Confetti](https://www.npmjs.com/package/canvas-confetti) |
 | **Auth** | Custom JWT + Supabase Logic |
+| **AI Engine** | [Vercel AI SDK](https://sdk.vercel.ai/docs) / Groq (Llama 3) |
 | **Scanner** | [Html5-Qrcode](https://github.com/mebjas/html5-qrcode) |
 
 ---
@@ -48,12 +49,13 @@ Tulook is crafted with a **"Premium Dark"** aesthetic, utilizing deep zinc tones
 
 ```bash
 ├── app/
-│   ├── admin/           # Admin Dashboard & Client Management
+│   ├── admin/           # Admin Dashboard, CRM & AI Agent
 │   ├── dashboard/       # Client Stamp Card & Scanner
+│   ├── ai-actions.ts    # AI Generation & Analysis Actions
 │   ├── auth-actions.ts  # Authentication Server Actions
 │   └── server-actions.ts# Business Logic Server Actions (Points, PIN)
 ├── components/
-│   ├── admin/           # Admin-specific (QR Gen, CRM Table)
+│   ├── admin/           # Admin-specific (QR Gen, CRM Table, AI Agent)
 │   ├── auth/            # Login & PIN forms
 │   ├── loyalty/         # Stamp card & Point animations
 │   ├── ui/              # Premium custom UI (Modals, Buttons)
@@ -148,8 +150,8 @@ Tulook captures the previous month’s Top 5 based on **Lifetime Points** (`prof
 Implementation highlights:
 - Lifetime points are never reduced on reward redemption; they represent historical contribution.
 - Snapshot table: `scripts/schema-monthly-winners.sql` (RLS enabled for public reads; inserts happen on the server using the Service Role).
-- Client badge component: [WinnerBadge.tsx](file:///c:/Users/Nico/OneDrive/Escritorio/fidelizacio_ia/system-barber-Loyalty-ia/components/loyalty/WinnerBadge.tsx)
-- Server actions (ranking and snapshots): [server-actions.ts](file:///c:/Users/Nico/OneDrive/Escritorio/fidelizacio_ia/system-barber-Loyalty-ia/app/server-actions.ts)
+- Client badge component: [WinnerBadge.tsx](components/loyalty/WinnerBadge.tsx)
+- Server actions (ranking and snapshots): [server-actions.ts](app/server-actions.ts)
 
 ---
 Built with ❤️ by **Tulook Development Team**
