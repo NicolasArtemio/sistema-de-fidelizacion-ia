@@ -132,7 +132,7 @@ export default function LiveDashboard({
                         </TabsTrigger>
                         
                         <TabsTrigger 
-                            value="missions" 
+                            value="misiones" 
                             className="flex flex-col items-center gap-1.5 py-2 data-[state=active]:bg-transparent data-[state=active]:text-amber-500 text-zinc-500 hover:text-zinc-300 transition-colors"
                         >
                             <Rocket className="w-5 h-5" />
