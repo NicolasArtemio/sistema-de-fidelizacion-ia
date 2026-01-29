@@ -10,21 +10,23 @@ export const metadata = {
 
 export default function AiAssistantPage() {
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <div className="mb-8">
-        <Link href="/admin">
-          <Button variant="ghost" className="pl-0 hover:pl-2 transition-all text-zinc-400 hover:text-white mb-6">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver al Panel
-          </Button>
-        </Link>
-        <h1 className="text-3xl font-bold text-white mb-2">Agente de Marketing IA</h1>
-        <p className="text-zinc-400">
-          Growth Hacking con IA para analizar y fidelizar clientes.
-        </p>
+    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+      <div className="container mx-auto py-8 px-4 max-w-7xl">
+        <div className="mb-8">
+          <Link href="/admin">
+            <Button variant="ghost" className="pl-0 hover:pl-2 transition-all text-zinc-400 hover:text-white mb-6">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver al Panel
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-bold text-white mb-2">Agente de Marketing IA</h1>
+          <p className="text-zinc-400">
+            Growth Hacking con IA para analizar y fidelizar clientes.
+          </p>
+        </div>
+        
+        <AiMarketingAgent />
       </div>
-      
-      <AiMarketingAgent />
     </div>
   )
 }

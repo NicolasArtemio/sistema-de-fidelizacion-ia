@@ -80,7 +80,7 @@ function CustomerMarketingCard({ customer, getStatusColor, getStatusIcon }: Cust
     };
 
     return (
-        <Card className="bg-zinc-900/50 border-white/5 hover:border-white/10 transition-colors h-full flex flex-col group">
+        <Card className="bg-zinc-900/80 backdrop-blur-md border-white/10 hover:border-white/20 transition-colors h-full flex flex-col group">
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-start mb-2">
                     <Badge variant="outline" className={`${getStatusColor(status)} flex items-center gap-1`}>
