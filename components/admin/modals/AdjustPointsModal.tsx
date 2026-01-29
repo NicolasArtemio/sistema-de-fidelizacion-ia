@@ -2,6 +2,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Trophy, Check, Lightbulb, User } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Profile } from '@/types'
+import { POINTS_FOR_FREE_CUT } from '@/lib/constants'
 
 interface AdjustPointsModalProps {
     isOpen: boolean
@@ -68,13 +69,12 @@ export default function AdjustPointsModal({
                                         <span className="font-semibold text-indigo-400 block mb-0.5">Tulook AI Tip:</span>
                                         {(() => {
                                             const currentPoints = selectedProfile.points + pointsToAdjust;
-                                            const target = 15;
-                                            const remaining = target - currentPoints;
+                                            const remaining = POINTS_FOR_FREE_CUT - currentPoints;
                                             
                                             if (remaining <= 0) {
                                                 return `¡${selectedProfile.full_name.split(' ')[0]} ya tiene suficientes puntos para un corte gratis!`;
                                             } else {
-                                                return `${selectedProfile.full_name.split(' ')[0]} está a solo ${remaining} visitas de un corte gratis.`;
+                                                return `¡Solo faltan ${remaining} puntos para un corte gratis!`;
                                             }
                                         })()}
                                     </div>
