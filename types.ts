@@ -7,6 +7,7 @@ export interface Profile {
     total_points_accumulated?: number // Added for Lifetime Ranking
     role: string
     pin?: string
+    avatar_url?: string | null
 }
 
 export interface Transaction {
@@ -16,4 +17,17 @@ export interface Transaction {
     amount: number
     description: string
     created_at: string
+}
+
+export interface RedemptionRequest {
+    id: string
+    user_id: string
+    reward_name: string
+    cost: number
+    status: string
+    created_at: string
+    profiles: {
+        full_name: string
+        points: number
+    }
 }

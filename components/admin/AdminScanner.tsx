@@ -166,38 +166,47 @@ export default function AdminScanner() {
                                 <div className="space-y-4">
                                     <Label className="text-center block text-emerald-400">Sumar Puntos (Servicio)</Label>
                                     <div className="grid grid-cols-3 gap-2">
-                                        {[5, 10, 15].map((amount) => (
+                                        {[
+                                            { l: '120', v: 120 },
+                                            { l: '150', v: 150 },
+                                            { l: '40', v: 40 }
+                                        ].map((opt) => (
                                             <Button
-                                                key={`scan-add-${amount}`}
-                                                variant={pointsToAdd === amount ? "default" : "outline"}
+                                                key={`scan-add-${opt.v}`}
+                                                variant={pointsToAdd === opt.v ? "default" : "outline"}
                                                 className={`h-12 font-bold text-lg ${
-                                                    pointsToAdd === amount 
+                                                    pointsToAdd === opt.v 
                                                     ? "bg-emerald-500 text-white hover:bg-emerald-600" 
                                                     : "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
                                                 }`}
-                                                onClick={() => setPointsToAdd(amount)}
+                                                onClick={() => setPointsToAdd(opt.v)}
                                             >
-                                                +{amount}
+                                                +{opt.l}
                                             </Button>
                                         ))}
                                     </div>
 
                                     <div className="pt-2 border-t border-white/10">
                                         <Label className="text-center block text-red-400 mb-2">Canjear (Premios)</Label>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {[5, 10, 15].map((amount) => (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {[
+                                                { l: '600', v: 600 },
+                                                { l: '900', v: 900 },
+                                                { l: '1200', v: 1200 },
+                                                { l: '1600', v: 1600 }
+                                            ].map((opt) => (
                                                 <Button
-                                                    key={`scan-sub-${amount}`}
-                                                    variant={pointsToAdd === -amount ? "default" : "outline"}
+                                                    key={`scan-sub-${opt.v}`}
+                                                    variant={pointsToAdd === -opt.v ? "default" : "outline"}
                                                     className={`h-12 font-bold text-lg ${
-                                                        pointsToAdd === -amount 
+                                                        pointsToAdd === -opt.v 
                                                         ? "bg-red-500 text-white hover:bg-red-600" 
                                                         : "border-red-500/30 text-red-400 hover:bg-red-500/10"
                                                     }`}
-                                                    onClick={() => setPointsToAdd(-amount)}
-                                                    disabled={scannedUser.points < amount}
+                                                    onClick={() => setPointsToAdd(-opt.v)}
+                                                    disabled={scannedUser.points < opt.v}
                                                 >
-                                                    -{amount}
+                                                    -{opt.l}
                                                 </Button>
                                             ))}
                                         </div>

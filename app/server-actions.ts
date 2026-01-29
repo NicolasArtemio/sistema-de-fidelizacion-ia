@@ -765,3 +765,123 @@ export async function getMonthlyWinnerStatus(userId: string) {
 
   return data // Will be { rank: 1 } or null
 }
+
+// ═══════════════════════════════════════════════════════════
+// NEW: Redemption Request Logic
+// ═══════════════════════════════════════════════════════════
+
+export async function requestRedemption(rewardId: string, rewardName: string, cost: number) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    // Verify sufficient points
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('points')
+        .eq('id', user.id)
+        .single()
+
+    if (!profile || (profile.points || 0) < cost) {
+        return { error: 'Puntos insuficientes' }
+    }
+
+    const { error } = await supabase
+        .from('redemption_requests')
+        .insert({
+            user_id: user.id,
+            reward_id: rewardId,
+            reward_name: rewardName,
+            cost: cost,
+            status: 'pending'
+        })
+
+    if (error) {
+        console.error('Redemption Request Error:', error)
+        return { error: 'Error al procesar la solicitud' }
+    }
+
+    revalidatePath('/dashboard')
+    return { success: true }
+}
+
+export async function getPendingRedemptions() {
+    await requireAdmin()
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from('redemption_requests')
+        .select(`
+            *,
+            profiles:user_id (full_name, avatar_url)
+        `)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+
+    if (error) {
+        console.error('Error fetching redemptions:', error)
+        return []
+    }
+    return data
+}
+
+export async function processRedemptionRequest(requestId: string, approved: boolean) {
+    // Requires Service Role for complex transaction + update
+    const supabaseAdmin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // Get Request Details
+    const { data: request } = await supabaseAdmin
+        .from('redemption_requests')
+        .select('*')
+        .eq('id', requestId)
+        .single()
+
+    if (!request) return { error: 'Solicitud no encontrada' }
+
+    if (approved) {
+        // 1. Verify points again just in case
+        const { data: userProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('points')
+            .eq('id', request.user_id)
+            .single()
+
+        if (!userProfile || userProfile.points < request.cost) {
+            return { error: 'El usuario ya no tiene puntos suficientes' }
+        }
+
+        // 2. Log Transaction
+        const { error: txError } = await supabaseAdmin
+            .from('transactions')
+            .insert({
+                user_id: request.user_id,
+                type: 'redeem',
+                amount: request.cost,
+                description: `Canje Aprobado: ${request.reward_name}`
+            })
+
+        if (txError) return { error: 'Error creating transaction' }
+
+        // 3. Deduct Points (Use direct update for reliability or RPC)
+        const { error: updateError } = await supabaseAdmin.rpc('increment_points', {
+            row_id: request.user_id,
+            count: -request.cost
+        })
+
+        if (updateError) return { error: 'Error deducting points' }
+    }
+
+    // Update Request Status
+    const { error: statusError } = await supabaseAdmin
+        .from('redemption_requests')
+        .update({ status: approved ? 'approved' : 'rejected' })
+        .eq('id', requestId)
+
+    if (statusError) return { error: 'Error updating status' }
+
+    revalidatePath('/admin')
+    return { success: true }
+}

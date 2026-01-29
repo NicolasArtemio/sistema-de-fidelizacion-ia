@@ -3,11 +3,11 @@ import { logout, getAtRiskClientCount, getAdminStats } from '@/app/server-action
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import AdminScanner from '@/components/admin/AdminScanner'
-import AdminStats from '@/components/admin/AdminStats'
 import ClientManagement from '@/components/admin/ClientManagement'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { LogOut, Bot, Sparkles, ArrowRight, AlertTriangle, Users, CalendarCheck, Gift } from 'lucide-react'
+import AdminMetrics from '@/components/admin/AdminMetrics'
 
 export default async function AdminDashboard() {
     const profile = await getSessionUserProfile()
@@ -24,8 +24,8 @@ export default async function AdminDashboard() {
     const stats = await getAdminStats()
 
     return (
-        <div className="min-h-screen bg-background pb-20 overflow-x-hidden">
-            <header className="px-4 py-3 flex justify-between items-center border-b border-white/5 bg-background/50 backdrop-blur sticky top-0 z-50">
+        <div className="min-h-screen bg-background pb-20 max-w-full overflow-x-hidden">
+            <header className="px-4 py-3 flex justify-between items-center border-b border-white/5 bg-background/50 backdrop-blur sticky top-0 z-50 w-full">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-3">
                         <div className="relative w-8 h-8">
@@ -58,60 +58,62 @@ export default async function AdminDashboard() {
                 </form>
             </header>
 
-            <main className="p-4 space-y-6 max-w-4xl mx-auto mt-6">
+            <main className="space-y-6 w-full max-w-4xl mx-auto mt-6">
                 
-                {atRiskCount > 0 && (
-                    <Link href="/admin/ai-assistant">
-                        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center justify-between cursor-pointer hover:bg-red-500/20 transition-all group animate-pulse">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-red-500/20 rounded-full">
-                                    <AlertTriangle className="w-5 h-5 text-red-500" />
-                                </div>
-                                <div>
-                                    <p className="font-bold text-red-100">¡Ojo! {atRiskCount} clientes se están por ir</p>
-                                    <p className="text-xs text-red-200/70">Mandales un WhatsApp ahora para que vuelvan.</p>
-                                </div>
-                            </div>
-                            <ArrowRight className="w-5 h-5 text-red-400 group-hover:translate-x-1 transition-transform" />
-                        </div>
-                    </Link>
-                )}
-
-                <div className="grid gap-6 md:grid-cols-2">
-                    <section>
-                        <AdminScanner />
-                    </section>
-
-                    <section>
+                <div className="w-full max-w-full overflow-x-hidden box-border px-4 space-y-6">
+                    {atRiskCount > 0 && (
                         <Link href="/admin/ai-assistant">
-                            <Card className="h-full bg-gradient-to-br from-indigo-950/30 to-purple-950/10 border-indigo-500/20 hover:border-indigo-500/40 transition-all cursor-pointer group relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                                    <Bot className="w-24 h-24 text-indigo-500" />
-                                </div>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-indigo-100">
-                                        <Sparkles className="w-5 h-5 text-indigo-400" />
-                                        AI Marketing Agent
-                                    </CardTitle>
-                                    <CardDescription className="text-indigo-200/60">
-                                        Analiza tus clientes y genera estrategias de retención automáticas.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center text-sm text-indigo-300 font-medium group-hover:translate-x-1 transition-transform">
-                                        Launch Analysis <ArrowRight className="w-4 h-4 ml-2" />
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center justify-between cursor-pointer hover:bg-red-500/20 transition-all group animate-pulse w-full">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="p-2 bg-red-500/20 rounded-full shrink-0">
+                                        <AlertTriangle className="w-5 h-5 text-red-500" />
                                     </div>
-                                </CardContent>
-                            </Card>
+                                    <div className="min-w-0">
+                                        <p className="font-bold text-red-100 truncate">¡Ojo! {atRiskCount} clientes se están por ir</p>
+                                        <p className="text-xs text-red-200/70 truncate">Mandales un WhatsApp ahora para que vuelvan.</p>
+                                    </div>
+                                </div>
+                                <ArrowRight className="w-5 h-5 text-red-400 group-hover:translate-x-1 transition-transform shrink-0" />
+                            </div>
                         </Link>
-                    </section>
+                    )}
 
-                    {/* Stats Overview */}
-                    <AdminStats initialStats={stats} />
+                    <div className="grid gap-6 md:grid-cols-2 w-full">
+                        <section className="min-w-0">
+                            <AdminScanner />
+                        </section>
 
-                    <section className="md:col-span-2">
-                        <ClientManagement />
-                    </section>
+                        <section className="min-w-0">
+                            <Link href="/admin/ai-assistant" className="block h-full">
+                                <Card className="h-full bg-gradient-to-br from-indigo-950/30 to-purple-950/10 border-indigo-500/20 hover:border-indigo-500/40 transition-all cursor-pointer group relative overflow-hidden min-w-0">
+                                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                                        <Bot className="w-24 h-24 text-indigo-500" />
+                                    </div>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2 text-indigo-100 min-w-0">
+                                            <Sparkles className="w-5 h-5 text-indigo-400 shrink-0" />
+                                            <span className="truncate">AI Marketing Agent</span>
+                                        </CardTitle>
+                                        <CardDescription className="text-indigo-200/60 truncate">
+                                            Analiza tus clientes y genera estrategias de retención automáticas.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex items-center text-sm text-indigo-300 font-medium group-hover:translate-x-1 transition-transform">
+                                            <span className="truncate">Launch Analysis</span> <ArrowRight className="w-4 h-4 ml-2 shrink-0" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        </section>
+
+                        {/* Stats Overview */}
+                        <AdminMetrics initialStats={stats} />
+
+                        <section className="md:col-span-2 min-w-0">
+                            <ClientManagement />
+                        </section>
+                    </div>
                 </div>
             </main>
         </div>

@@ -8,11 +8,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
 
 export default function MissionsList() {
+    const instagramUrl = 'https://instagram.com/tulook.barberia' // Placeholder
+
     const handleShare = async () => {
         const shareData = {
-            title: 'Unite a Tulook',
-            text: '¡Che, unite a la App de Tulook! Registrate acá y sumamos puntos los dos:',
-            url: window.location.origin
+            title: 'Seguinos en Instagram',
+            text: '¡Che, seguí a esta barbería que son unos cracks! Si los seguís, me ayudás a sumar puntos para mi próximo corte:',
+            url: instagramUrl
         }
 
         try {
@@ -29,7 +31,7 @@ export default function MissionsList() {
     }
 
     const handleWhatsAppProof = () => {
-        const text = encodeURIComponent('Hola! Mi amigo ya se registró, acá te mando la captura para sumar mis 20 puntos.')
+        const text = encodeURIComponent('Hola! Acá te mando las capturas de mis amigos que empezaron a seguir la página para sumar mis puntos.')
         window.open(`https://wa.me/5491112345678?text=${text}`, '_blank')
     }
 
@@ -60,11 +62,11 @@ export default function MissionsList() {
                         <CardContent className="p-5 space-y-4 relative z-10">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h3 className="text-lg font-bold text-white mb-1">¡Traé a tus conocidos!</h3>
-                                    <p className="text-sm text-zinc-400">Invitá amigos y sumá puntos cuando se registren.</p>
+                                    <h3 className="text-lg font-bold text-white mb-1">¡Viralizá nuestro Instagram!</h3>
+                                    <p className="text-sm text-zinc-400">Compartí nuestro perfil con tus amigos. Por cada conocido que nos siga, sumás 30 puntos. ¡No hay límite!</p>
                                 </div>
-                                <div className="bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full flex items-center gap-1">
-                                    <span className="text-amber-500 font-bold text-sm">+20 pts</span>
+                                <div className="bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full flex items-center gap-1 shrink-0">
+                                    <span className="text-amber-500 font-bold text-xs whitespace-nowrap">+30 pts / amigo</span>
                                 </div>
                             </div>
 
@@ -82,6 +84,38 @@ export default function MissionsList() {
                                 >
                                     <MessageCircle className="w-4 h-4 mr-2" />
                                     Enviar Captura
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                {/* Follow Instagram Mission */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                >
+                    <Card className="bg-zinc-900/50 border-white/5 hover:bg-zinc-900/80 transition-colors">
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-pink-500/10 rounded-lg">
+                                    <Instagram className="w-6 h-6 text-pink-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-white">Seguinos en Instagram</h3>
+                                    <p className="text-xs text-zinc-400">Sumate a nuestra comunidad</p>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                                <span className="text-amber-500 font-bold text-sm">+10 pts</span>
+                                <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="h-8 w-8 p-0 rounded-full bg-white/5 hover:bg-white/10"
+                                    onClick={() => window.open(instagramUrl, '_blank')}
+                                >
+                                    <Rocket className="w-4 h-4 text-zinc-400" />
                                 </Button>
                             </div>
                         </CardContent>
@@ -133,7 +167,7 @@ export default function MissionsList() {
                                 </div>
                             </div>
                             <div className="flex flex-col items-end gap-2">
-                                <span className="text-amber-500 font-bold text-sm">+10 pts</span>
+                                <span className="text-amber-500 font-bold text-sm">+5 pts</span>
                                 <Button size="sm" variant="ghost" className="h-8 w-8 p-0 rounded-full bg-white/5 hover:bg-white/10">
                                     <Rocket className="w-4 h-4 text-zinc-400" />
                                 </Button>

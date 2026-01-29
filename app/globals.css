@@ -100,48 +100,15 @@
   --sidebar-ring: #D4AF37;
 }
 
-/* Ensure .dark matches :root since we force dark mode, or use it for specific overrides if needed */
-.dark {
-  --background: #0a0a0a;
-  --foreground: #ffffff;
-  --card: #121212;
-  --card-foreground: #ffffff;
-  --popover: #121212;
-  --popover-foreground: #ffffff;
-  --primary: #D4AF37;
-  --primary-foreground: #000000;
-  --secondary: #27272a;
-  --secondary-foreground: #ffffff;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #27272a;
-  --accent-foreground: #D4AF37;
-  --destructive: #7f1d1d;
-  --destructive-foreground: #ffffff;
-  --border: #27272a;
-  --input: #27272a;
-  --ring: #D4AF37;
-  --chart-1: #D4AF37;
-  --chart-2: #C49F27;
-  --chart-3: #A47F07;
-  --chart-4: #E4BF47;
-  --chart-5: #F4CF57;
-  --sidebar: #121212;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #D4AF37;
-  --sidebar-primary-foreground: #000000;
-  --sidebar-accent: #2C2C2C;
-  --sidebar-accent-foreground: #D4AF37;
-  --sidebar-border: #2C2C2C;
-  --sidebar-ring: #D4AF37;
+/* GLOBAL OVERFLOW PROTECTION */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
+#root {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }

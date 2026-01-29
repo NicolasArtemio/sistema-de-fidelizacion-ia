@@ -83,11 +83,11 @@ export default function QRScanner({ onScan, isProcessing = false }: QRScannerPro
                     size="lg"
                     className="w-full gap-3 text-lg h-16 bg-gradient-to-r from-primary via-amber-500 to-amber-600 hover:from-amber-500 hover:via-amber-600 hover:to-primary text-black font-bold shadow-xl shadow-primary/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                    <div className="relative">
+                    <div className="relative shrink-0">
                         <QrCode className="w-7 h-7" />
                         <Sparkles className="w-3 h-3 absolute -top-1 -right-1 animate-pulse" />
                     </div>
-                    Escanear Cliente
+                    <span className="truncate">Escanear Cliente</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md bg-gradient-to-b from-zinc-900 to-black border-primary/30 shadow-2xl">
