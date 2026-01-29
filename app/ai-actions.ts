@@ -211,16 +211,56 @@ function generateFallbackInsights(users: AnalyzedUser[]): MarketingInsight {
 export async function getLatestCustomerData(customerId: string) {
   const supabase = await createClient();
   
+  // Fetch profile
   const { data: user } = await supabase
     .from('profiles')
-    .select('id, points, full_name')
+    .select('id, points, full_name, created_at')
     .eq('id', customerId)
     .single();
 
   if (!user) return null;
 
+  // Fetch last transaction for visit data
+  const { data: transactions } = await supabase
+    .from('transactions')
+    .select('created_at')
+    .eq('user_id', customerId)
+    .eq('type', 'earn')
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const now = new Date();
+  const lastVisit = transactions && transactions.length > 0 
+    ? new Date(transactions[0].created_at) 
+    : new Date(user.created_at);
+  
+  const daysSinceLastVisit = Math.floor((now.getTime() - lastVisit.getTime()) / (1000 * 3600 * 24));
+  const visitCount = transactions ? transactions.length : 0; // Approximate if we only fetch 1, but for status we need logic.
+  
+  // To get accurate visit count we might need count query, but for 'At Risk' vs 'New' vs 'Loyal'
+  // logic used in fallback:
+  // Loyal: visitCount > 2 && days < 30
+  // At Risk: days >= 21
+  // New: else
+  
+  // Let's get full count for consistency if needed, or just rely on days for At Risk.
+  const { count } = await supabase
+    .from('transactions')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', customerId)
+    .eq('type', 'earn');
+    
+  const totalVisits = count || 0;
+
   let status: 'Loyal' | 'At Risk' | 'New' = 'New';
-  if (user.points >= 15) status = 'Loyal';
+  
+  if (daysSinceLastVisit >= 21) {
+      status = 'At Risk';
+  } else if (totalVisits > 2 && daysSinceLastVisit < 30) {
+      status = 'Loyal';
+  } else {
+      status = 'New';
+  }
   
   return {
     points: user.points,
@@ -235,21 +275,43 @@ export async function regenerateClientMessage(
   const supabase = await createClient();
   const apiKey = process.env.GROQ_API_KEY;
 
-  // 1. Fetch fresh data
+  // 1. Fetch fresh data including transactions for status logic
   const { data: user } = await supabase
     .from('profiles')
-    .select('id, full_name, points')
+    .select('id, full_name, points, created_at')
     .eq('id', customerId)
     .single();
 
   if (!user) throw new Error('Usuario no encontrado');
 
+  // Calculate Status Correctly (Mirroring Logic)
+  const { data: transactions } = await supabase
+    .from('transactions')
+    .select('created_at')
+    .eq('user_id', customerId)
+    .eq('type', 'earn')
+    .order('created_at', { ascending: false });
+
+  const now = new Date();
+  const lastVisit = transactions && transactions.length > 0 
+    ? new Date(transactions[0].created_at) 
+    : new Date(user.created_at);
+  
+  const daysSinceLastVisit = Math.floor((now.getTime() - lastVisit.getTime()) / (1000 * 3600 * 24));
+  const visitCount = transactions ? transactions.length : 0;
+
+  let status: 'Loyal' | 'At Risk' | 'New' = 'New';
+  
+  if (daysSinceLastVisit >= 21) {
+      status = 'At Risk';
+  } else if (visitCount > 2 && daysSinceLastVisit < 30) {
+      status = 'Loyal';
+  } else {
+      status = 'New';
+  }
+
   const name = user.full_name || 'Cliente';
   const points = user.points || 0;
-  
-  // Determine Status and Milestones
-  let status: 'Loyal' | 'At Risk' | 'New' = 'New';
-  if (points >= 15) status = 'Loyal';
 
   // Calculate milestones for prompt context
   let nextMilestone = 15;

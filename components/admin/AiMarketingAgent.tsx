@@ -227,7 +227,7 @@ export default function AiMarketingAgent() {
                     <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full animate-pulse"></div>
                     <Loader2 className="w-12 h-12 text-amber-500 animate-spin relative z-10" />
                 </div>
-                <p className="text-zinc-400 animate-pulse">Analizando patrones de clientes...</p>
+                <p className="text-zinc-400 animate-pulse">Analizando clientes...</p>
             </div>
         )
     }
@@ -251,8 +251,8 @@ export default function AiMarketingAgent() {
                                     <Sparkles className="w-6 h-6 text-indigo-400" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-xl text-white">AI Global Summary</CardTitle>
-                                    <CardDescription className="text-indigo-200/60">Análisis de salud del negocio en tiempo real</CardDescription>
+                                    <CardTitle className="text-xl text-white">Resumen Global IA</CardTitle>
+                                    <CardDescription className="text-indigo-200/60">Salud del negocio en tiempo real</CardDescription>
                                 </div>
                             </div>
                             <Button 
@@ -270,7 +270,7 @@ export default function AiMarketingAgent() {
                                 ) : (
                                     <>
                                         <RefreshCw className="w-4 h-4 mr-2" />
-                                        Actualizar
+                                        Iniciar Análisis
                                     </>
                                 )}
                             </Button>

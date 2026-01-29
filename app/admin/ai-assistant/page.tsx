@@ -18,9 +18,9 @@ export default function AiAssistantPage() {
             Volver al Panel
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold text-white mb-2">AI Marketing Agent</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">Agente de Marketing IA</h1>
         <p className="text-zinc-400">
-          Growth Hacking impulsado por IA para analizar y fidelizar clientes.
+          Growth Hacking con IA para analizar y fidelizar clientes.
         </p>
       </div>
       
