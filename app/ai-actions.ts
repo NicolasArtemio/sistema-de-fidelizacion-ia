@@ -95,15 +95,18 @@ export async function generateMarketingInsights(): Promise<MarketingInsight> {
 
     **Message Logic (STRICT):**
     - **If Points == 0:** Generate a warm "Welcome / First cut" message. Encourage them to start.
-    - **If Points > 0 AND Points < 15:** Generate a motivational message. 
-      - Calculate points needed for next milestone (5, 10, or 15). 
-      - Logic: Next_Milestone is the next multiple of 5. (e.g., if 3 points -> next is 5. If 8 -> next is 10).
-      - Message MUST say: "¡Vas por buen camino! Te faltan [X] puntos para tu próximo premio."
-    - **If Points >= 15:** Generate a VIP message. "¡Sos un crack! Tenés un premio listo para canjear. ¡Te esperamos! 👑"
+    - **If Points > 0 AND Points < 1600:** Generate a motivational message.
+      - Calculate points needed for next reward.
+      - **Rewards Tiers:** 600 pts (Basic), 900 pts, 1200 pts, 1600 pts (Premium).
+      - **Service Values:** Corte = 120 pts, Corte+Barba = 150 pts, Perfilado = 40 pts.
+      - **CRITICAL:** You MUST suggest specific services to bridge the gap.
+        - Example: "Te faltan 100 pts. ¡Con un Corte (120 pts) ya llegás!"
+        - Example: "Estás a 40 pts de tu premio. ¡Vení por un Perfilado y listo!"
+    - **If Points >= 1600:** Generate a VIP message. "¡Sos un crack! Tenés un premio mayor listo para canjear. ¡Te esperamos! 👑"
 
     Also provide a 'Global AI Summary' of the business health based on these stats.
     The summary must be in **Spanish**. It should mention total active clients, how many are at risk, and a specific strategy recommendation.
-    Example: "Tienes 1 cliente en riesgo (Marcos). Sugerencia: Envíale una promoción de 'Corte + Barba' para recuperar sus 8 puntos."
+    Example: "Tienes 1 cliente en riesgo (Marcos). Sugerencia: Envíale una promoción de 'Corte + Barba' (+150 pts) para reactivarlo."
 
     Return ONLY valid JSON with this structure:
     {
@@ -178,17 +181,15 @@ function generateFallbackInsights(users: AnalyzedUser[]): MarketingInsight {
         const points = u.points || 0
 
         if (points === 0) {
-            message = `¡Hola ${u.name}! 💈 Bienvenido a Tulook. Tu primer corte es el inicio de grandes premios. ¡Te esperamos! ✂️`
-        } else if (points >= 15) {
-            message = `¡Sos un crack, ${u.name}! 👑 Tenés ${points} puntos y un premio listo para canjear. ¡Te esperamos! 💈`
+            message = `¡Hola ${u.name.split(' ')[0]}! 👋 Bienvenido a Tulook. Vení a conocer tu nueva barbería favorita. ¡Te esperamos!`
+        } else if (points < 600) {
+            const needed = 600 - points
+            message = `¡Hola ${u.name.split(' ')[0]}! Estás a solo ${needed} pts de tu primer premio. Con unos cortes más llegás. 💈`
+        } else if (points < 1600) {
+            const needed = 1600 - points
+            message = `¡Grande ${u.name.split(' ')[0]}! Te faltan ${needed} pts para el premio mayor. ¡Metele que falta poco! 🔥`
         } else {
-            // Points 1-14. Milestones: 5, 10, 15
-            let nextMilestone = 15;
-            if (points < 5) nextMilestone = 5;
-            else if (points < 10) nextMilestone = 10;
-            
-            const pointsNeeded = nextMilestone - points;
-            message = `¡Vas por buen camino, ${u.name}! 🚀 Te faltan solo ${pointsNeeded} puntos para tu próximo premio de ${nextMilestone} pts. 🏆`
+            message = `¡${u.name.split(' ')[0]}, sos un VIP! 👑 Ya tenés puntos para canjear lo que quieras. ¡Vení cuando quieras!`
         }
 
         return {
@@ -197,7 +198,7 @@ function generateFallbackInsights(users: AnalyzedUser[]): MarketingInsight {
             phone: u.phone,
             status,
             message,
-            points: u.points,
+            points,
             lastVisitDays: u.daysSinceLastVisit
         }
     })
@@ -314,9 +315,10 @@ export async function regenerateClientMessage(
   const points = user.points || 0;
 
   // Calculate milestones for prompt context
-  let nextMilestone = 15;
-  if (points < 5) nextMilestone = 5;
-  else if (points < 10) nextMilestone = 10;
+  let nextMilestone = 1600;
+  if (points < 600) nextMilestone = 600;
+  else if (points < 900) nextMilestone = 900;
+  else if (points < 1200) nextMilestone = 1200;
   
   const pointsNeeded = nextMilestone - points;
   
@@ -339,18 +341,21 @@ export async function regenerateClientMessage(
     
     Context:
     - Points: ${points}
-    - Next Milestone: ${nextMilestone} points
+    - Next Reward Tier: ${nextMilestone} points
     - Points Needed: ${pointsNeeded}
     - Current Message: "${currentMessage}" (Make the new one DIFFERENT but keeping the same intent)
+    - Service Values: Corte=120, Corte+Barba=150, Perfilado=40.
 
     **Rules:**
-    1. **Personalization:** Start with "${name}" but vary the greeting (e.g., "Che ${name}", "¡${name}!", "Hola ${name}").
+    1. **Personalization:** Start with "${name}" but vary the greeting.
     2. **Tone:** Informal, cool, Rioplatense Spanish.
     3. **Length:** Max 2 sentences.
     4. **Content Logic (STRICT):**
        - If Points == 0: Welcome / First cut invitation.
-       - If Points 1-14: MUST say exactly: "Te faltan solo ${pointsNeeded} puntos para tu próximo premio." (You can vary the surrounding text but keep the math).
-       - If Points 15+: VIP / Reward ready.
+       - If Points < 1600: MUST calculate how many services are needed. 
+         - E.g. If 200 pts needed: "Te faltan 200 pts. ¡Con 2 Cortes (240 pts) ya llegás sobrado!"
+         - E.g. If 40 pts needed: "Estás a solo 40 pts. ¡Vení por un Perfilado y llevate el premio!"
+       - If Points >= 1600: VIP / Reward ready.
     
     Return ONLY the raw string of the new message. No quotes, no JSON.
   `;

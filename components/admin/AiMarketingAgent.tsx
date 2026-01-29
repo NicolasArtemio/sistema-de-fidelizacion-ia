@@ -181,7 +181,7 @@ export default function AiMarketingAgent() {
                                         ...c,
                                         points: newProfile.points,
                                         // Update status logic simplified for client-side
-                                        status: newProfile.points >= 15 ? 'Loyal' : c.status
+                                        status: newProfile.points >= 600 ? 'Loyal' : c.status
                                     };
                                 }
                                 return c;
